@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="card">
+  <h1>How to Use the CoachBots</h1>
+
+  <p>
+    Choose one of the five CoachBots depending on the communication skill you want to practice.
+    Each CoachBot works step-by-step using four pathways: Learn, Practice, Be Coached, and Create Training.
+  </p>
+</div>
+
+<div class="card">
+  <h2>Which CoachBot Should I Choose?</h2>
+
+  <div class="grid">
+
+    <div class="card bot-card">
+      <img src="{% static 'img/conflict-coachbot-logo.png' %}" class="how-logo" alt="Conflict CoachBot Logo">
+      <h3>Conflict CoachBot</h3>
+      <p><strong>Framework:</strong> Conflict Transformation</p>
+      <p>
+        Use this when the situation involves repeated conflict, strained relationships,
+        competing needs, identity concerns, power dynamics, or relationship repair.
+      </p>
+      <p>
+        It helps you look beneath the surface using the Iceberg Model:
+        observable events, underlying needs, fears, values, identity concerns, and interests.
+      </p>
+    </div>
+
+    <div class="card bot-card">
+      <img src="{% static 'img/RISE.png' %}" class="how-logo" alt="RISE CoachBot Logo">
+      <h3>RISE CoachBot</h3>
+      <p><strong>RISE:</strong> Rapport, Interest appeal, Social conformity, Effective messaging.</p>
+      <p>
+        Use this when you need influence, clarity, trust-building, shared understanding,
+        or effective messaging.
+      </p>
+      <p>
+        It helps you communicate in a way that lowers resistance and increases the chance
+        of shared understanding and action.
+      </p>
+    </div>
+
+    <div class="card bot-card">
+      <img src="{% static 'img/DESC.png' %}" class="how-logo" alt="DESC CoachBot Logo">
+      <h3>DESC CoachBot</h3>
+      <p><strong>DESC:</strong> Describe, Express, Suggest, Consequences.</p>
+      <p>
+        Use this when you need to de-escalate, set a boundary, clarify expectations,
+        or make a respectful request.
+      </p>
+      <p>
+        It helps you describe facts without judgment, express impact, suggest a constructive
+        alternative, and clarify the positive outcome of change.
+      </p>
+    </div>
+
+    <div class="card bot-card">
+      <img src="{% static 'img/PAUSE.png' %}" class="how-logo" alt="PAUSE CoachBot Logo">
+      <h3>PAUSE CoachBot</h3>
+      <p>
+        <strong>PAUSE:</strong> Pay attention, Acknowledge your story,
+        Understand evidence vs assumptions, Seek alternative explanations,
+        Execute a values-aligned response.
+      </p>
+      <p>
+        Use this when emotions, assumptions, bias, or snap judgments may affect your response.
+      </p>
+      <p>
+        It helps you slow down, examine your assumptions, and choose a response aligned
+        with your values.
+      </p>
+    </div>
+
+    <div class="card bot-card">
+      <img src="{% static 'img/SEA.png' %}" class="how-logo" alt="SEA CoachBot Logo">
+      <h3>SEA CoachBot</h3>
+      <p><strong>SEA:</strong> State, Explain, Ask.</p>
+      <p>
+        Use this when you need to share your view clearly while staying curious
+        and open to another person’s reasoning.
+      </p>
+      <p>
+        It helps you state your observation or view, explain your reasoning or intent,
+        and ask a genuine question.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<div class="card">
+  <h2>The Four Pathways</h2>
+
+  <ol>
+    <li>
+      <strong>Learn:</strong> Use this when you want to understand the framework,
+      its purpose, and when to apply it.
+    </li>
+    <li>
+      <strong>Practice:</strong> Use this for low-stakes rehearsal with fictional
+      or practice scenarios.
+    </li>
+    <li>
+      <strong>Be Coached:</strong> Use this when you want help applying the framework
+      to your own real situation.
+    </li>
+    <li>
+      <strong>Create Training:</strong> Use this when you want to create teaching
+      materials, scenarios, or facilitation guidance for others.
+    </li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2>How to Start</h2>
+
+  <ol>
+    <li>Open the CoachBots page.</li>
+    <li>Select a CoachBot.</li>
+    <li>Use as Guest, Register, or Login.</li>
+    <li>If using guest mode, enter your name.</li>
+    <li>Select an Ollama model.</li>
+    <li>Choose a starter card or type your own message.</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2>Important</h2>
+
+  <p>
+    If you choose <strong>Be Coached</strong>, share your own real situation.
+    The CoachBot will guide you one step at a time.
+  </p>
+
+  <p>
+    If you choose <strong>Practice</strong>, the CoachBot may use low-stakes fictional
+    scenarios so you can rehearse safely before applying the framework to a real situation.
+  </p>
+</div>
+
+<style>
+  .bot-card {
+    text-align: center;
+  }
+
+  .bot-card p {
+    text-align: left;
+  }
+
+  .how-logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    margin-bottom: 12px;
+  }
+</style>
+
+{% endblock %}

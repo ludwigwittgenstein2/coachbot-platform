@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+  <h1>Create Account</h1>
+  <p>Register to save your conversations and view your dashboard.</p>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Register</button>
+  </form>
+
+  <p style="margin-top:20px;">
+    Want to try without an account?
+    <a href="/guest-name/">Use as Guest</a>
+  </p>
+</div>
+{% endblock %}

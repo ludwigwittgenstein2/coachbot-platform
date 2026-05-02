@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<h1>Choose a CoachBot</h1>
+
+<div class="grid">
+  {% for bot in bots %}
+    <div class="card bot-choice-card">
+
+      {% if "Conflict" in bot.name %}
+        <img src="{% static 'img/conflict-coachbot-logo.png' %}" class="bot-list-logo" alt="Conflict CoachBot Logo">
+      {% elif "RISE" in bot.name %}
+        <img src="{% static 'img/RISE.png' %}" class="bot-list-logo" alt="RISE CoachBot Logo">
+      {% elif "DESC" in bot.name %}
+        <img src="{% static 'img/DESC.png' %}" class="bot-list-logo" alt="DESC CoachBot Logo">
+      {% elif "PAUSE" in bot.name %}
+        <img src="{% static 'img/PAUSE.png' %}" class="bot-list-logo" alt="PAUSE CoachBot Logo">
+      {% elif "SEA" in bot.name %}
+        <img src="{% static 'img/SEA.png' %}" class="bot-list-logo" alt="SEA CoachBot Logo">
+      {% endif %}
+
+      <h2>{{ bot.name }}</h2>
+
+      <p><strong>Framework:</strong> {{ bot.framework }}</p>
+
+      <p>{{ bot.description }}</p>
+
+      <form method="get" action="/chat/start/">
+        <input type="hidden" name="chatbot_id" value="{{ bot.id }}">
+
+        <label><strong>Model:</strong></label>
+        <select name="model_id">
+          {% for model in models %}
+            {% if model.is_active %}
+              <option value="{{ model.id }}">{{ model.display_name }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+
+        <br><br>
+        <button type="submit">Start Chat</button>
+      </form>
+    </div>
+  {% endfor %}
+</div>
+
+<style>
+  .bot-choice-card {
+    text-align: center;
+  }
+
+  .bot-list-logo {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    margin-bottom: 14px;
+  }
+
+  .bot-choice-card p {
+    text-align: left;
+  }
+
+  .bot-choice-card form {
+    margin-top: 18px;
+    text-align: left;
+  }
+</style>
+
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="card">
+  <h1>Communication CoachBot Platform</h1>
+
+  <p style="font-size:20px; line-height:1.5;">
+    Practice difficult conversations with Conflict, RISE, DESC, PAUSE, and SEA CoachBots.
+  </p>
+
+  <p>
+    These CoachBots help you practice communication skills for conflict, feedback,
+    psychological safety, emotional regulation, and structured conversation.
+  </p>
+
+  <a class="btn" href="/bots/">Choose a CoachBot</a>
+</div>
+
+<div class="card">
+  <h2>How to Use</h2>
+
+  <ol>
+    <li>Use as Guest, Register, or Login.</li>
+    <li>If using guest mode, enter your name.</li>
+    <li>Choose one CoachBot.</li>
+    <li>Select an Ollama model.</li>
+    <li>Click a starter card or type your own message.</li>
+    <li>For coaching or practice, share your own real situation.</li>
+  </ol>
+</div>
+
+<div class="grid">
+  <div class="card bot-card">
+    <img src="{% static 'img/conflict-coachbot-logo.png' %}" class="home-bot-logo" alt="Conflict CoachBot Logo">
+    <h2>Conflict CoachBot</h2>
+    <p>
+      Helps users navigate difficult conversations and conflict using interests,
+      needs, and practical relationship repair steps.
+    </p>
+  </div>
+
+  <div class="card bot-card">
+    <img src="{% static 'img/RISE.png' %}" class="home-bot-logo" alt="RISE CoachBot Logo">
+    <h2>RISE CoachBot</h2>
+    <p><strong>Rapport, Interest, Social Norms, Effective Messaging.</strong></p>
+    <p>
+      Helps users build psychologically safer communication through rapport,
+      curiosity, norms, and effective messaging.
+    </p>
+  </div>
+
+  <div class="card bot-card">
+    <img src="{% static 'img/DESC.png' %}" class="home-bot-logo" alt="DESC CoachBot Logo">
+    <h2>DESC CoachBot</h2>
+    <p><strong>Describe, Express, Specify, Consequences.</strong></p>
+    <p>
+      Helps users prepare assertive conversations using a structured script.
+    </p>
+  </div>
+
+  <div class="card bot-card">
+    <img src="{% static 'img/PAUSE.png' %}" class="home-bot-logo" alt="PAUSE CoachBot Logo">
+    <h2>PAUSE CoachBot</h2>
+    <p><strong>Pay Attention, Acknowledge, Understand, Seek, Examine.</strong></p>
+    <p>
+      Helps users slow down, listen, regulate emotion, and respond with curiosity.
+    </p>
+  </div>
+
+  <div class="card bot-card">
+    <img src="{% static 'img/SEA.png' %}" class="home-bot-logo" alt="SEA CoachBot Logo">
+    <h2>SEA CoachBot</h2>
+    <p><strong>State, Explain, Ask.</strong></p>
+    <p>
+      Helps users clearly state a concern, explain the reason or impact,
+      and ask an open-ended question.
+    </p>
+  </div>
+</div>
+
+<style>
+  .bot-card {
+    text-align: center;
+  }
+
+  .home-bot-logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    margin-bottom: 14px;
+  }
+</style>
+
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card" style="max-width:650px; margin:60px auto;">
+  <h1>Use as Guest</h1>
+
+  <p>
+    Enter your name to try the CoachBots without creating an account.
+    We use this only to track usage and improve the pilot.
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+
+    <label><strong>Your Name:</strong></label><br><br>
+    <input 
+      type="text" 
+      name="guest_name" 
+      placeholder="Enter your name" 
+      required
+      style="width:100%; max-width:400px;"
+    >
+
+    <br><br>
+    <button type="submit">Continue as Guest</button>
+  </form>
+
+  <hr style="margin:30px 0;">
+
+  <p>
+    Want to save your conversations?
+    <a href="/register/">Create an account</a>
+  </p>
+
+  <p>
+    Already have an account?
+    <a href="/accounts/login/">Login</a>
+  </p>
+</div>
+{% endblock %}

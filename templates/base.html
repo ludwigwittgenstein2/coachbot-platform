@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CoachBot Platform</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f7f7fb;
+      color: #222;
+    }
+
+    nav {
+      background: #111827;
+      color: white;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+    }
+
+    nav span {
+      color: #d1d5db;
+    }
+
+    .logout-form {
+      display: inline;
+      margin: 0;
+    }
+
+    .logout-button {
+      background: none;
+      border: none;
+      color: white;
+      padding: 0;
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .logout-button:hover,
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 1050px;
+      margin: 28px auto;
+      padding: 0 18px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      margin: 16px 0;
+      box-shadow: 0 4px 18px rgba(0,0,0,.06);
+    }
+
+    button,
+    .btn {
+      background: #2563eb;
+      color: white;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    select,
+    input,
+    textarea {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .chat-box {
+      height: 460px;
+      overflow: auto;
+      background: white;
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .msg {
+      margin: 12px 0;
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .user {
+      background: #dbeafe;
+      margin-left: 20%;
+    }
+
+    .assistant {
+      background: #f3f4f6;
+      margin-right: 20%;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    td,
+    th {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+  </style>
+</head>
+
+<body>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/how-to-use/">How to Use</a>
+    <a href="/bots/">CoachBots</a>
+
+    {% if user.is_authenticated %}
+      <a href="/chat/dashboard/">My Dashboard</a>
+    {% endif %}
+
+    {% if user.is_staff %}
+      <a href="/analytics/admin-dashboard/">Admin Analytics</a>
+      <a href="/admin/">Django Admin</a>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+      <span>Signed in as {{ user.username }}</span>
+
+      <form method="post" action="{% url 'logout' %}" class="logout-form">
+        {% csrf_token %}
+        <button type="submit" class="logout-button">Logout</button>
+      </form>
+    {% else %}
+      {% if request.session.guest_name %}
+        <span>Guest: {{ request.session.guest_name }}</span>
+        <a href="/guest-logout/">Exit Guest Session</a>
+      {% else %}
+        <a href="/guest-name/">Use as Guest</a>
+      {% endif %}
+
+      <a href="/register/">Register</a>
+      <a href="/accounts/login/">Login</a>
+    {% endif %}
+  </nav>
+
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

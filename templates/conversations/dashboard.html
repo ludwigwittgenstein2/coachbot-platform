@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% block content %}
+<h1>My Dashboard</h1><div class="card"><p>Total messages: {{ total_messages }}</p><p>Total conversations: {{ conversations|length }}</p></div>
+<table><tr><th>Conversation</th><th>CoachBot</th><th>Model</th><th>Updated</th></tr>{% for c in conversations %}<tr><td><a href="/chat/{{ c.id }}/">{{ c.title }}</a></td><td>{{ c.chatbot.name }}</td><td>{{ c.model.display_name }}</td><td>{{ c.updated_at }}</td></tr>{% endfor %}</table>
+{% endblock %}

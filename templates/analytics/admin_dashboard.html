@@ -1,0 +1,6 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Admin Analytics</h1>
+<div class="grid"><div class="card"><h2>{{ total_users }}</h2><p>Users</p></div><div class="card"><h2>{{ total_conversations }}</h2><p>Conversations</p></div><div class="card"><h2>{{ total_messages }}</h2><p>Messages</p></div></div>
+<div class="grid"><div class="card"><h2>Usage by CoachBot</h2>{% for row in usage_by_bot %}<p>{{ row.chatbot__name }}: {{ row.total }}</p>{% endfor %}</div><div class="card"><h2>Usage by Model</h2>{% for row in usage_by_model %}<p>{{ row.model__display_name }}: {{ row.total }}</p>{% endfor %}</div></div>
+<h2>Recent Usage</h2><table><tr><th>User</th><th>Bot</th><th>Model</th><th>Input chars</th><th>Output chars</th><th>Time</th></tr>{% for log in recent_logs %}<tr><td>{{ log.user }}</td><td>{{ log.chatbot.name }}</td><td>{{ log.model.display_name }}</td><td>{{ log.input_chars }}</td><td>{{ log.output_chars }}</td><td>{{ log.created_at }}</td></tr>{% endfor %}</table>
+{% endblock %}

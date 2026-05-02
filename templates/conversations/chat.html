@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="bot-hero">
+
+  {% if "Conflict" in conversation.chatbot.name %}
+    <img src="{% static 'img/conflict-coachbot-logo.png' %}" class="bot-logo" alt="Conflict CoachBot Logo">
+  {% elif "RISE" in conversation.chatbot.name %}
+    <img src="{% static 'img/RISE.png' %}" class="bot-logo" alt="RISE CoachBot Logo">
+  {% elif "DESC" in conversation.chatbot.name %}
+    <img src="{% static 'img/DESC.png' %}" class="bot-logo" alt="DESC CoachBot Logo">
+  {% elif "SEA" in conversation.chatbot.name %}
+    <img src="{% static 'img/SEA.png' %}" class="bot-logo" alt="SEA CoachBot Logo">
+  {% elif "PAUSE" in conversation.chatbot.name %}
+    <img src="{% static 'img/PAUSE.png' %}" class="bot-logo" alt="PAUSE CoachBot Logo">
+  {% endif %}
+
+  <h1>{{ conversation.chatbot.name }}</h1>
+  <p class="byline">By RICK REJELEENE ♙</p>
+
+  {% if "Conflict" in conversation.chatbot.name %}
+    <p class="bot-description">
+      The conflict bot will help you work through complex conflicts by focusing on interests and practical relationship repair steps.
+    </p>
+  {% elif "RISE" in conversation.chatbot.name %}
+    <p class="bot-description">
+      The RISE bot helps users build psychologically safer communication through rapport, curiosity, norms, and effective messaging.
+    </p>
+  {% elif "DESC" in conversation.chatbot.name %}
+    <p class="bot-description">
+      The DESC bot helps you prepare assertive conversations using Describe, Express, Specify, and Consequences.
+    </p>
+  {% elif "PAUSE" in conversation.chatbot.name %}
+    <p class="bot-description">
+      The PAUSE bot helps you slow down, listen, regulate emotion, and respond with curiosity.
+    </p>
+  {% elif "SEA" in conversation.chatbot.name %}
+    <p class="bot-description">
+      The SEA bot helps users clearly state a concern, explain the reason or impact, and ask an open-ended question.
+    </p>
+  {% endif %}
+</div>
+
+<div class="starter-grid">
+  {% if "Conflict" in conversation.chatbot.name %}
+    <button class="starter-card" onclick="sendStarter('I want to Learn about Conflict Transformation')">
+      I want to Learn<br>about Conflict<br>Transformation
+    </button>
+    <button class="starter-card" onclick="sendStarter('I want to Practice using Conflict Transformation')">
+      I want to Practice<br>using Conflict<br>Transformation
+    </button>
+    <button class="starter-card" onclick="sendStarter('Help me use Conflict Transformation for my situation')">
+      Help me<br>use Conflict<br>Transformation for...
+    </button>
+    <button class="starter-card" onclick="sendStarter('Create a training scenario for Conflict Transformation')">
+      Create a training<br>scenario<br>for Conflict...
+    </button>
+
+  {% elif "RISE" in conversation.chatbot.name %}
+    <button class="starter-card" onclick="sendStarter('I want to Learn about RISE')">
+      I want to Learn<br>about RISE
+    </button>
+    <button class="starter-card" onclick="sendStarter('I want to Practice using RISE')">
+      I want to Practice<br>using RISE
+    </button>
+    <button class="starter-card" onclick="sendStarter('Help me use RISE for my situation')">
+      Help me<br>use RISE<br>for my situation
+    </button>
+    <button class="starter-card" onclick="sendStarter('Create a training scenario for RISE')">
+      Create a training<br>scenario<br>for RISE
+    </button>
+
+  {% elif "DESC" in conversation.chatbot.name %}
+    <button class="starter-card" onclick="sendStarter('I want to Learn about DESC')">
+      I want to Learn<br>about DESC
+    </button>
+    <button class="starter-card" onclick="sendStarter('I want to Practice using DESC')">
+      I want to Practice<br>using DESC
+    </button>
+    <button class="starter-card" onclick="sendStarter('Help me use DESC for my situation')">
+      Help me<br>use DESC<br>for my situation
+    </button>
+    <button class="starter-card" onclick="sendStarter('Create a training scenario for DESC')">
+      Create a training<br>scenario<br>for DESC
+    </button>
+
+  {% elif "PAUSE" in conversation.chatbot.name %}
+    <button class="starter-card" onclick="sendStarter('I want to Learn about PAUSE')">
+      I want to Learn<br>about PAUSE
+    </button>
+    <button class="starter-card" onclick="sendStarter('I want to Practice using PAUSE')">
+      I want to Practice<br>using PAUSE
+    </button>
+    <button class="starter-card" onclick="sendStarter('Help me use PAUSE for my situation')">
+      Help me<br>use PAUSE<br>for my situation
+    </button>
+    <button class="starter-card" onclick="sendStarter('Create a training scenario for PAUSE')">
+      Create a training<br>scenario<br>for PAUSE
+    </button>
+
+  {% elif "SEA" in conversation.chatbot.name %}
+    <button class="starter-card" onclick="sendStarter('I want to Learn about SEA')">
+      I want to Learn<br>about SEA
+    </button>
+    <button class="starter-card" onclick="sendStarter('I want to Practice using SEA')">
+      I want to Practice<br>using SEA
+    </button>
+    <button class="starter-card" onclick="sendStarter('Help me use SEA for my situation')">
+      Help me<br>use SEA<br>for my situation
+    </button>
+    <button class="starter-card" onclick="sendStarter('Create a training scenario for SEA')">
+      Create a training<br>scenario<br>for SEA
+    </button>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>{{ conversation.chatbot.name }}</h2>
+  <p><strong>Framework:</strong> {{ conversation.chatbot.framework }}</p>
+
+  <label><strong>Model:</strong></label>
+  <select id="model_id">
+    {% for model in models %}
+      {% if model.is_active %}
+        <option value="{{ model.id }}" {% if conversation.model.id == model.id %}selected{% endif %}>
+          {{ model.display_name }}
+        </option>
+      {% endif %}
+    {% endfor %}
+  </select>
+</div>
+
+<div class="chat-box" id="chatBox">
+  {% for message in messages %}
+    <div class="msg {{ message.role }}">
+      <strong>
+        {% if message.role == "user" %}
+          {% if user.is_authenticated %}
+            {{ user.username }}
+          {% else %}
+            {{ request.session.guest_name|default:"Guest" }}
+          {% endif %}
+        {% else %}
+          Assistant
+        {% endif %}
+      </strong>
+      <p>{{ message.content|linebreaksbr }}</p>
+    </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <form id="chatForm">
+    {% csrf_token %}
+    <textarea id="messageInput" rows="3" style="width:100%;" placeholder="Type your message..."></textarea>
+    <br><br>
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<style>
+  .bot-hero {
+    text-align: center;
+    padding: 30px 20px 55px;
+    background: white;
+    border-radius: 0 0 18px 18px;
+  }
+
+  .bot-logo {
+    width: 125px;
+    height: 125px;
+    object-fit: contain;
+    margin: 0 auto 20px;
+    display: block;
+  }
+
+  .bot-hero h1 {
+    font-size: 42px;
+    margin: 0;
+  }
+
+  .byline {
+    color: #8a8a8a;
+    font-size: 22px;
+    margin: 18px 0;
+  }
+
+  .bot-description {
+    max-width: 760px;
+    margin: 0 auto;
+    font-size: 24px;
+    line-height: 1.45;
+  }
+
+  .starter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+    margin: -25px auto 35px;
+    max-width: 1050px;
+  }
+
+  .starter-card {
+    background: white;
+    color: #666;
+    border: 1px solid #e2e2e2;
+    border-radius: 24px;
+    padding: 28px 24px;
+    font-size: 23px;
+    line-height: 1.5;
+    text-align: left;
+    min-height: 150px;
+    box-shadow: 0 3px 10px rgba(0,0,0,.08);
+    cursor: pointer;
+  }
+
+  .starter-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,.12);
+  }
+
+  @media (max-width: 900px) {
+    .starter-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .starter-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .bot-hero h1 {
+      font-size: 32px;
+    }
+
+    .bot-description {
+      font-size: 18px;
+    }
+
+    .starter-card {
+      font-size: 20px;
+    }
+  }
+</style>
+
+<script>
+  const chatForm = document.getElementById("chatForm");
+  const messageInput = document.getElementById("messageInput");
+  const chatBox = document.getElementById("chatBox");
+  const modelSelect = document.getElementById("model_id");
+
+  const currentUser = "{% if user.is_authenticated %}{{ user.username|escapejs }}{% else %}{{ request.session.guest_name|default:'Guest'|escapejs }}{% endif %}";
+
+  function appendMessage(sender, content) {
+    const div = document.createElement("div");
+    div.className = "msg " + sender;
+
+    const label = sender === "user" ? currentUser : "Assistant";
+
+    div.innerHTML = `<strong>${label}</strong><p>${content.replace(/\n/g, "<br>")}</p>`;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  async function sendMessage(message) {
+    if (!message.trim()) return;
+
+    appendMessage("user", message);
+    messageInput.value = "";
+
+    const formData = new FormData();
+    formData.append("message", message);
+    formData.append("model_id", modelSelect.value);
+    formData.append("csrfmiddlewaretoken", document.querySelector("[name=csrfmiddlewaretoken]").value);
+
+    const response = await fetch("{% url 'send_message' conversation.id %}", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+    appendMessage("assistant", data.reply || data.error || "No response received.");
+  }
+
+  function sendStarter(text) {
+    sendMessage(text);
+  }
+
+  chatForm.addEventListener("submit", function(e) {
+    e.preventDefault();
+    sendMessage(messageInput.value);
+  });
+</script>
+
+{% endblock %}
