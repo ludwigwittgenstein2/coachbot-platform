@@ -1,5 +1,8 @@
 # Communication CoachBot Platform
 
+![Image 1](static/img/image1.png)
+![Image 2](static/img/image2.png)
+
 A Django MVP for five communication-training CoachBots:
 
 1. Conflict CoachBot
@@ -66,7 +69,8 @@ The included `railway.json` runs migrations, seeds bots, and starts Gunicorn.
 ## Production next steps
 
 Before real learners use it, add consent language, privacy policy, de-identification warnings, export/delete conversation options, rate limiting, and stronger production security settings.
-=======
+
 # coachbot-platform
+
 Practice difficult conversations with Conflict, RISE, DESC, PAUSE, and SEA CoachBots.
 
