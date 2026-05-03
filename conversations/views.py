@@ -1,8 +1,11 @@
+from urllib.parse import urlencode
+
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from analytics.models import UsageLog
@@ -11,22 +14,54 @@ from .models import Conversation, Message
 from .ollama_client import OllamaError, ask_ollama
 
 
+def safe_next_url(request, default="/bots/"):
+    """
+    Safely read the next URL from GET or POST.
+    Prevents broken redirects and avoids unsafe external redirects.
+    """
+    next_url = request.POST.get("next") or request.GET.get("next") or default
+
+    if url_has_allowed_host_and_scheme(
+        url=next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return next_url
+
+    return default
+
+
+def redirect_to_guest_name(request):
+    """
+    Redirect unauthenticated users to guest-name page while preserving
+    the full original URL, including query params like model_id.
+    """
+    next_url = request.get_full_path()
+    query_string = urlencode({"next": next_url})
+    return redirect(f"/guest-name/?{query_string}")
+
+
 def guest_name(request):
+    next_url = safe_next_url(request, default="/bots/")
+
     if request.method == "POST":
         guest_name_value = request.POST.get("guest_name", "").strip()
-        next_url = request.POST.get("next", "/bots/")
 
         if guest_name_value:
             request.session["guest_name"] = guest_name_value
+            request.session["is_guest"] = True
+            request.session.modified = True
             return redirect(next_url)
 
     return render(request, "guest_name.html", {
-        "next": request.GET.get("next", "/bots/")
+        "next": next_url,
     })
 
 
 def guest_logout(request):
     request.session.pop("guest_name", None)
+    request.session.pop("is_guest", None)
+    request.session.modified = True
     return redirect("/")
 
 
@@ -37,6 +72,12 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+
+            # Clear guest session after real login
+            request.session.pop("guest_name", None)
+            request.session.pop("is_guest", None)
+            request.session.modified = True
+
             return redirect("/bots/")
     else:
         form = UserCreationForm()
@@ -49,14 +90,17 @@ def start_chat(request):
     model_id = request.GET.get("model_id")
 
     if not request.user.is_authenticated and not request.session.get("guest_name"):
-        return redirect(f"/guest-name/?next={request.get_full_path()}")
+        return redirect_to_guest_name(request)
+
+    if not chatbot_id:
+        return JsonResponse({"error": "chatbot_id is required."}, status=400)
 
     chatbot = get_object_or_404(Chatbot, id=chatbot_id, is_active=True)
 
     if model_id:
         model = get_object_or_404(OllamaModel, id=model_id, is_active=True)
     else:
-        model = OllamaModel.objects.filter(is_active=True).first()
+        model = OllamaModel.objects.filter(is_active=True).order_by("id").first()
 
     if model is None:
         return JsonResponse({"error": "No active Ollama model found."}, status=400)
@@ -83,7 +127,7 @@ def chat_detail(request, conversation_id):
         guest_name_value = request.session.get("guest_name", "")
 
         if not guest_name_value:
-            return redirect(f"/guest-name/?next={request.get_full_path()}")
+            return redirect_to_guest_name(request)
 
         conversation = get_object_or_404(
             Conversation,
@@ -92,7 +136,7 @@ def chat_detail(request, conversation_id):
             user__isnull=True,
         )
 
-    models = OllamaModel.objects.filter(is_active=True)
+    models = OllamaModel.objects.filter(is_active=True).order_by("id")
 
     return render(request, "conversations/chat.html", {
         "conversation": conversation,
@@ -125,10 +169,10 @@ def send_message(request, conversation_id):
     user_message = request.POST.get("message", "").strip()
     model_id = request.POST.get("model_id") or conversation.model_id
 
-    model = get_object_or_404(OllamaModel, id=model_id, is_active=True)
-
     if not user_message:
         return JsonResponse({"error": "Message cannot be empty."}, status=400)
+
+    model = get_object_or_404(OllamaModel, id=model_id, is_active=True)
 
     Message.objects.create(
         conversation=conversation,
@@ -137,9 +181,16 @@ def send_message(request, conversation_id):
         model_name=model.name,
     )
 
+    recent_messages = list(
+        conversation.messages
+        .exclude(role="system")
+        .order_by("-created_at")[:20]
+    )
+    recent_messages.reverse()
+
     history = [
         {"role": m.role, "content": m.content}
-        for m in conversation.messages.exclude(role="system").order_by("created_at")[:20]
+        for m in recent_messages
     ]
 
     try:

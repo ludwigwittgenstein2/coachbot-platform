@@ -9,17 +9,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # ---------------------------------------------------------------------------
+# Environment detection
+# ---------------------------------------------------------------------------
+
+ON_RAILWAY = bool(os.getenv("RAILWAY_ENVIRONMENT"))
+
+# Local default: DEBUG=True
+# Railway default: DEBUG=False
+DEBUG = os.getenv("DEBUG", "True" if not ON_RAILWAY else "False").lower() == "true"
+
+
+# ---------------------------------------------------------------------------
 # Core
 # ---------------------------------------------------------------------------
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 
-# Default to False so production is safe if the env var is missing.
-DEBUG = os.getenv("DEBUG", "False") == "True"
-
 ALLOWED_HOSTS = [
     h.strip()
-    for h in os.getenv("ALLOWED_HOSTS", "*").split(",")
+    for h in os.getenv(
+        "ALLOWED_HOSTS",
+        "localhost,127.0.0.1,0.0.0.0,.railway.app,.up.railway.app,*",
+    ).split(",")
     if h.strip()
 ]
 
@@ -41,18 +52,35 @@ INSTALLED_APPS = [
     "analytics",
 ]
 
+
+# ---------------------------------------------------------------------------
+# Middleware
+# ---------------------------------------------------------------------------
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+
+    # Must come before AuthenticationMiddleware
     "django.contrib.sessions.middleware.SessionMiddleware",
+
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+
+    # Must come after SessionMiddleware
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
 ROOT_URLCONF = "coachbot_project.urls"
+
+
+# ---------------------------------------------------------------------------
+# Templates
+# ---------------------------------------------------------------------------
 
 TEMPLATES = [
     {
@@ -70,25 +98,41 @@ TEMPLATES = [
     }
 ]
 
+
 WSGI_APPLICATION = "coachbot_project.wsgi.application"
 
 
 # ---------------------------------------------------------------------------
-# Security / Proxy (Railway terminates TLS at its edge proxy)
+# Security / Proxy
+# Railway terminates HTTPS at the edge proxy.
+# Locally, cookies must NOT be secure-only because localhost uses HTTP.
 # ---------------------------------------------------------------------------
 
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
         "CSRF_TRUSTED_ORIGINS",
-        "https://web-production-71b11.up.railway.app,https://*.up.railway.app",
+        "http://localhost:8000,"
+        "http://127.0.0.1:8000,"
+        "https://web-production-71b11.up.railway.app,"
+        "https://*.up.railway.app",
     ).split(",")
     if origin.strip()
 ]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Important:
+# Local DEBUG=True  -> cookies are NOT secure-only
+# Railway DEBUG=False -> cookies ARE secure-only
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+
+# Keep this None for localhost and Railway unless you have a custom domain.
+SESSION_COOKIE_DOMAIN = None
 
 
 # ---------------------------------------------------------------------------
@@ -132,25 +176,20 @@ USE_TZ = True
 
 
 # ---------------------------------------------------------------------------
-# Static files (WhiteNoise)
+# Static files / WhiteNoise
 # ---------------------------------------------------------------------------
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Only include STATICFILES_DIRS if the source dir actually exists,
-# so collectstatic doesn't warn about a missing directory.
 _static_src = BASE_DIR / "static"
 STATICFILES_DIRS = [_static_src] if _static_src.exists() else []
 
-# CompressedStaticFilesStorage (no Manifest) so a missing manifest entry
-# can't 500 the whole site. Switch to CompressedManifestStaticFilesStorage
-# later once your asset pipeline is reliably running collectstatic.
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 
 # ---------------------------------------------------------------------------
-# Misc
+# Auth redirects
 # ---------------------------------------------------------------------------
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -167,16 +206,21 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 
 # ---------------------------------------------------------------------------
-# Logging — make sure 500 tracebacks show up in Railway logs
+# Logging
 # ---------------------------------------------------------------------------
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {
-        "console": {"class": "logging.StreamHandler"},
+        "console": {
+            "class": "logging.StreamHandler",
+        },
     },
-    "root": {"handlers": ["console"], "level": "INFO"},
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
     "loggers": {
         "django.request": {
             "handlers": ["console"],
