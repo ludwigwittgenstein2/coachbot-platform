@@ -1,14 +1,32 @@
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+# ---------------------------------------------------------------------------
+# Core
+# ---------------------------------------------------------------------------
+
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
-DEBUG = os.getenv("DEBUG", "True") == "True"
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "*").split(",")]
+
+# Default to False so production is safe if the env var is missing.
+DEBUG = os.getenv("DEBUG", "False") == "True"
+
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.getenv("ALLOWED_HOSTS", "*").split(",")
+    if h.strip()
+]
+
+
+# ---------------------------------------------------------------------------
+# Applications
+# ---------------------------------------------------------------------------
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -54,6 +72,29 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "coachbot_project.wsgi.application"
 
+
+# ---------------------------------------------------------------------------
+# Security / Proxy (Railway terminates TLS at its edge proxy)
+# ---------------------------------------------------------------------------
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "CSRF_TRUSTED_ORIGINS",
+        "https://web-production-71b11.up.railway.app,https://*.up.railway.app",
+    ).split(",")
+    if origin.strip()
+]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+
+# ---------------------------------------------------------------------------
+# Database
+# ---------------------------------------------------------------------------
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL:
@@ -79,24 +120,68 @@ else:
         }
     }
 
+
+# ---------------------------------------------------------------------------
+# Internationalization
+# ---------------------------------------------------------------------------
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "America/New_York"
 USE_I18N = True
 USE_TZ = True
 
+
+# ---------------------------------------------------------------------------
+# Static files (WhiteNoise)
+# ---------------------------------------------------------------------------
+
 STATIC_URL = "/static/"
-
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
-
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# Only include STATICFILES_DIRS if the source dir actually exists,
+# so collectstatic doesn't warn about a missing directory.
+_static_src = BASE_DIR / "static"
+STATICFILES_DIRS = [_static_src] if _static_src.exists() else []
+
+# CompressedStaticFilesStorage (no Manifest) so a missing manifest entry
+# can't 500 the whole site. Switch to CompressedManifestStaticFilesStorage
+# later once your asset pipeline is reliably running collectstatic.
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+
+
+# ---------------------------------------------------------------------------
+# Misc
+# ---------------------------------------------------------------------------
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_REDIRECT_URL = "/bots/"
 LOGOUT_REDIRECT_URL = "/"
 
+
+# ---------------------------------------------------------------------------
+# Ollama
+# ---------------------------------------------------------------------------
+
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+
+
+# ---------------------------------------------------------------------------
+# Logging — make sure 500 tracebacks show up in Railway logs
+# ---------------------------------------------------------------------------
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "root": {"handlers": ["console"], "level": "INFO"},
+    "loggers": {
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
