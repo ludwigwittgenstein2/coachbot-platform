@@ -66,3 +66,7 @@ The included `railway.json` runs migrations, seeds bots, and starts Gunicorn.
 ## Production next steps
 
 Before real learners use it, add consent language, privacy policy, de-identification warnings, export/delete conversation options, rate limiting, and stronger production security settings.
+=======
+# coachbot-platform
+Practice difficult conversations with Conflict, RISE, DESC, PAUSE, and SEA CoachBots.
+
