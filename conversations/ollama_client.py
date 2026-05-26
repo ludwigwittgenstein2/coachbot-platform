@@ -22,8 +22,8 @@ def ask_ollama(model_name, system_prompt, history, user_message):
 
         # Controls speed + response length.
         "options": {
-            "num_ctx": 1024,
-            "num_predict": 180,
+            "num_ctx": 2048,
+            "num_predict": 400,
             "temperature": 0.2,
             "top_p": 0.75,
             "repeat_penalty": 1.15,
