@@ -184,7 +184,7 @@ def send_message(request, conversation_id):
     recent_messages = list(
         conversation.messages
         .exclude(role="system")
-        .order_by("-created_at")[:20]
+        .order_by("-created_at")[:6]
     )
     recent_messages.reverse()
 
