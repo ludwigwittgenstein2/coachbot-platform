@@ -1003,7 +1003,8 @@ BOT_DATA = [
 # Keep only one active model.
 # This model name must exactly match Railway Ollama's /api/tags output.
 MODEL_DATA = [
-    ("qwen2.5:3b-instruct", "Qwen 2.5 3B Instruct"),
+    ("qwen2.5:1.5b-instruct", "Qwen 2.5 1.5B Instruct - Fastest"),
+    ("qwen2.5:3b-instruct", "Qwen 2.5 3B Instruct - Better"),
 ]
 
 
