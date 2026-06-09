@@ -120,7 +120,7 @@
   <h2>{{ conversation.chatbot.name }}</h2>
   <p><strong>Framework:</strong> {{ conversation.chatbot.framework }}</p>
 
-  <label><strong>Model:</strong></label>
+  <label for="model_id"><strong>Model:</strong></label>
   <select id="model_id">
     {% for model in models %}
       {% if model.is_active %}
@@ -156,7 +156,7 @@
     {% csrf_token %}
     <textarea id="messageInput" rows="3" style="width:100%;" placeholder="Type your message..."></textarea>
     <br><br>
-    <button type="submit">Send</button>
+    <button type="submit" id="sendButton">Send</button>
   </form>
 </div>
 
@@ -221,6 +221,30 @@
     box-shadow: 0 8px 20px rgba(0,0,0,.12);
   }
 
+  .starter-card:disabled,
+  #sendButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .msg p {
+    white-space: pre-wrap;
+  }
+
+  .typing-cursor::after {
+    content: "▍";
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0%, 50% {
+      opacity: 1;
+    }
+    51%, 100% {
+      opacity: 0;
+    }
+  }
+
   @media (max-width: 900px) {
     .starter-grid {
       grid-template-columns: repeat(2, 1fr);
@@ -251,38 +275,198 @@
   const messageInput = document.getElementById("messageInput");
   const chatBox = document.getElementById("chatBox");
   const modelSelect = document.getElementById("model_id");
+  const sendButton = document.getElementById("sendButton");
+  const starterButtons = document.querySelectorAll(".starter-card");
 
   const currentUser = "{% if user.is_authenticated %}{{ user.username|escapejs }}{% else %}{{ request.session.guest_name|default:'Guest'|escapejs }}{% endif %}";
+  const sendStreamUrl = "{% url 'send_message_stream' conversation.id %}";
+  const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+  let isSending = false;
+
+  function setSendingState(value) {
+    isSending = value;
+    sendButton.disabled = value;
+    modelSelect.disabled = value;
+
+    starterButtons.forEach(button => {
+      button.disabled = value;
+    });
+
+    sendButton.textContent = value ? "Sending..." : "Send";
+  }
+
+  function scrollToBottom() {
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
 
   function appendMessage(sender, content) {
     const div = document.createElement("div");
     div.className = "msg " + sender;
 
-    const label = sender === "user" ? currentUser : "Assistant";
+    const strong = document.createElement("strong");
+    strong.textContent = sender === "user" ? currentUser : "Assistant";
 
-    div.innerHTML = `<strong>${label}</strong><p>${content.replace(/\n/g, "<br>")}</p>`;
+    const p = document.createElement("p");
+    p.textContent = content;
+
+    div.appendChild(strong);
+    div.appendChild(p);
+
     chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    scrollToBottom();
+
+    return p;
+  }
+
+  function appendAssistantStreamingBubble() {
+    const div = document.createElement("div");
+    div.className = "msg assistant";
+
+    const strong = document.createElement("strong");
+    strong.textContent = "Assistant";
+
+    const p = document.createElement("p");
+    p.className = "typing-cursor";
+    p.textContent = "";
+
+    div.appendChild(strong);
+    div.appendChild(p);
+
+    chatBox.appendChild(div);
+    scrollToBottom();
+
+    return p;
+  }
+
+  function parseSSEEvents(buffer) {
+    const events = buffer.split("\n\n");
+    const remainingBuffer = events.pop();
+
+    return {
+      events: events,
+      remainingBuffer: remainingBuffer
+    };
+  }
+
+  function getEventData(rawEvent) {
+    const lines = rawEvent.split("\n");
+    const dataLines = lines
+      .filter(line => line.startsWith("data: "))
+      .map(line => line.slice(6));
+
+    if (!dataLines.length) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(dataLines.join("\n"));
+    } catch (error) {
+      console.error("Could not parse SSE data:", error);
+      return null;
+    }
   }
 
   async function sendMessage(message) {
-    if (!message.trim()) return;
+    const cleanedMessage = message.trim();
 
-    appendMessage("user", message);
+    if (!cleanedMessage || isSending) {
+      return;
+    }
+
+    appendMessage("user", cleanedMessage);
     messageInput.value = "";
 
+    const assistantBubble = appendAssistantStreamingBubble();
+
     const formData = new FormData();
-    formData.append("message", message);
+    formData.append("message", cleanedMessage);
     formData.append("model_id", modelSelect.value);
-    formData.append("csrfmiddlewaretoken", document.querySelector("[name=csrfmiddlewaretoken]").value);
+    formData.append("csrfmiddlewaretoken", csrfToken);
 
-    const response = await fetch("{% url 'send_message' conversation.id %}", {
-      method: "POST",
-      body: formData
-    });
+    setSendingState(true);
 
-    const data = await response.json();
-    appendMessage("assistant", data.reply || data.error || "No response received.");
+    try {
+      const response = await fetch(sendStreamUrl, {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) {
+        assistantBubble.classList.remove("typing-cursor");
+        assistantBubble.textContent = "Error: server returned " + response.status;
+        return;
+      }
+
+      if (!response.body) {
+        assistantBubble.classList.remove("typing-cursor");
+        assistantBubble.textContent = "Streaming is not supported in this browser.";
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      let buffer = "";
+      let fullReply = "";
+
+      while (true) {
+        const result = await reader.read();
+
+        if (result.done) {
+          break;
+        }
+
+        buffer += decoder.decode(result.value, { stream: true });
+
+        const parsed = parseSSEEvents(buffer);
+        buffer = parsed.remainingBuffer;
+
+        for (const rawEvent of parsed.events) {
+          const data = getEventData(rawEvent);
+
+          if (!data) {
+            continue;
+          }
+
+          if (data.token) {
+            fullReply += data.token;
+            assistantBubble.textContent = fullReply;
+            scrollToBottom();
+          }
+
+          if (data.status === "done") {
+            assistantBubble.classList.remove("typing-cursor");
+
+            if (data.reply) {
+              assistantBubble.textContent = data.reply;
+            }
+
+            scrollToBottom();
+          }
+
+          if (data.status === "error" || data.error) {
+            assistantBubble.classList.remove("typing-cursor");
+            assistantBubble.textContent = data.error || "Error generating response.";
+            scrollToBottom();
+          }
+        }
+      }
+
+      assistantBubble.classList.remove("typing-cursor");
+
+      if (!assistantBubble.textContent.trim()) {
+        assistantBubble.textContent = "No response received.";
+      }
+
+    } catch (error) {
+      console.error(error);
+      assistantBubble.classList.remove("typing-cursor");
+      assistantBubble.textContent = "Error: Could not connect to the CoachBot server.";
+    } finally {
+      setSendingState(false);
+      messageInput.focus();
+    }
   }
 
   function sendStarter(text) {
@@ -293,6 +477,15 @@
     e.preventDefault();
     sendMessage(messageInput.value);
   });
+
+  messageInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(messageInput.value);
+    }
+  });
+
+  scrollToBottom();
 </script>
 
 {% endblock %}
