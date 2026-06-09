@@ -27,7 +27,7 @@ def get_ollama_payload(model_name, messages, stream=False):
             "temperature": 0.2,
             "top_p": 0.8,
             "num_predict": -1,
-            "num_ctx": 2048,
+            "num_ctx": 4096,
             "repeat_penalty": 1.1,
         },
     }
