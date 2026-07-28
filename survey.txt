@@ -1,0 +1,10 @@
+Questions: 
+
+Two Questions: 
+
+Five CoachBot Seperately, 
+We need the survey collect from Coachbot seperarely. 
+
+1. How useful was your interaction with the Coachbot?
+2. How confident do you feel now, after practicing with the Coachbot?
+3. Textbook (Open-Ended Feedback) (How can we improve?)

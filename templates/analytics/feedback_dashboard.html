@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}CoachBot Feedback Analytics{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/analytics.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+    <h1>CoachBot Feedback Analytics</h1>
+
+    <div class="analytics-cards">
+        <div class="analytics-card">
+            <span>Total responses</span>
+            <strong>
+                {{ overall.response_count|default:0 }}
+            </strong>
+        </div>
+
+        <div class="analytics-card">
+            <span>Average usefulness</span>
+            <strong>
+                {{ overall.average_usefulness|default:0|floatformat:2 }}
+                / 5
+            </strong>
+        </div>
+
+        <div class="analytics-card">
+            <span>Average confidence</span>
+            <strong>
+                {{ overall.average_confidence|default:0|floatformat:2 }}
+                / 5
+            </strong>
+        </div>
+    </div>
+
+    <h2>Results by CoachBot</h2>
+
+    <div class="analytics-table-wrapper">
+        <table class="analytics-table">
+            <thead>
+                <tr>
+                    <th>CoachBot</th>
+                    <th>Responses</th>
+                    <th>Average usefulness</th>
+                    <th>Average confidence</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in summary_by_chatbot %}
+                    <tr>
+                        <td>
+                            {{ row.conversation__chatbot__name }}
+                        </td>
+                        <td>{{ row.response_count }}</td>
+                        <td>
+                            {{ row.average_usefulness|floatformat:2 }}
+                        </td>
+                        <td>
+                            {{ row.average_confidence|floatformat:2 }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4">
+                            No feedback has been submitted yet.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Recent comments</h2>
+
+    <div class="analytics-table-wrapper">
+        <table class="analytics-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Participant</th>
+                    <th>CoachBot</th>
+                    <th>Useful</th>
+                    <th>Confident</th>
+                    <th>How can we improve?</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for feedback in recent_feedback %}
+                    <tr>
+                        <td>
+                            {{ feedback.created_at|date:"M d, Y H:i" }}
+                        </td>
+
+                        <td>
+                            {% if feedback.conversation.user %}
+                                {{ feedback.conversation.user.username }}
+                            {% else %}
+                                {{ feedback.conversation.guest_name|default:"Guest" }}
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ feedback.conversation.chatbot.name }}
+                        </td>
+
+                        <td>{{ feedback.usefulness }}/5</td>
+                        <td>{{ feedback.confidence }}/5</td>
+
+                        <td>
+                            {{ feedback.improvement_feedback|default:"—" }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">
+                            No feedback has been submitted yet.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -2,10 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CoachBot Platform</title>
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>
+    {% block title %}CoachBot Platform{% endblock %}
+  </title>
 
   <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -32,6 +45,10 @@
       color: #d1d5db;
     }
 
+    nav a:hover {
+      text-decoration: underline;
+    }
+
     .logout-form {
       display: inline;
       margin: 0;
@@ -40,6 +57,7 @@
     .logout-button {
       background: none;
       border: none;
+      border-radius: 0;
       color: white;
       padding: 0;
       font: inherit;
@@ -47,13 +65,13 @@
       text-decoration: none;
     }
 
-    .logout-button:hover,
-    nav a:hover {
+    .logout-button:hover {
       text-decoration: underline;
     }
 
     .container {
-      max-width: 1050px;
+      width: 100%;
+      max-width: 1200px;
       margin: 28px auto;
       padding: 0 18px;
     }
@@ -63,7 +81,7 @@
       border-radius: 16px;
       padding: 22px;
       margin: 16px 0;
-      box-shadow: 0 4px 18px rgba(0,0,0,.06);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
     }
 
     button,
@@ -75,6 +93,17 @@
       padding: 10px 14px;
       text-decoration: none;
       cursor: pointer;
+      font: inherit;
+    }
+
+    button:hover,
+    .btn:hover {
+      opacity: 0.92;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
     }
 
     select,
@@ -83,11 +112,19 @@
       padding: 10px;
       border: 1px solid #ddd;
       border-radius: 10px;
+      font: inherit;
+    }
+
+    textarea {
+      resize: vertical;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(
+        auto-fit,
+        minmax(240px, 1fr)
+      );
       gap: 16px;
     }
 
@@ -126,8 +163,36 @@
       padding: 10px;
       border-bottom: 1px solid #eee;
       text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      font-weight: 700;
+    }
+
+    @media (max-width: 720px) {
+      nav {
+        padding: 12px 16px;
+        gap: 12px;
+      }
+
+      .container {
+        margin: 20px auto;
+        padding: 0 12px;
+      }
+
+      .user {
+        margin-left: 5%;
+      }
+
+      .assistant {
+        margin-right: 5%;
+      }
     }
   </style>
+
+  {# Individual pages can insert page-specific CSS here. #}
+  {% block extra_css %}{% endblock %}
 </head>
 
 <body>
@@ -141,32 +206,64 @@
     {% endif %}
 
     {% if user.is_staff %}
-      <a href="/analytics/admin-dashboard/">Admin Analytics</a>
-      <a href="/admin/">Django Admin</a>
+      <a href="/analytics/admin-dashboard/">
+        Admin Analytics
+      </a>
+
+      <a href="/admin/">
+        Django Admin
+      </a>
     {% endif %}
 
     {% if user.is_authenticated %}
-      <span>Signed in as {{ user.username }}</span>
+      <span>
+        Signed in as {{ user.username }}
+      </span>
 
-      <form method="post" action="{% url 'logout' %}" class="logout-form">
+      <form
+        method="post"
+        action="{% url 'logout' %}"
+        class="logout-form"
+      >
         {% csrf_token %}
-        <button type="submit" class="logout-button">Logout</button>
+
+        <button
+          type="submit"
+          class="logout-button"
+        >
+          Logout
+        </button>
       </form>
     {% else %}
       {% if request.session.guest_name %}
-        <span>Guest: {{ request.session.guest_name }}</span>
-        <a href="/guest-logout/">Exit Guest Session</a>
+        <span>
+          Guest: {{ request.session.guest_name }}
+        </span>
+
+        <a href="/guest-logout/">
+          Exit Guest Session
+        </a>
       {% else %}
-        <a href="/guest-name/">Use as Guest</a>
+        <a href="/guest-name/">
+          Use as Guest
+        </a>
       {% endif %}
 
-      <a href="/register/">Register</a>
-      <a href="/accounts/login/">Login</a>
+      <a href="/register/">
+        Register
+      </a>
+
+      <a href="/accounts/login/">
+        Login
+      </a>
     {% endif %}
   </nav>
 
-  <div class="container">
+  <main class="container">
     {% block content %}{% endblock %}
-  </div>
+  </main>
+
+  {# Individual pages can insert page-specific JavaScript here. #}
+  {% block extra_js %}{% endblock %}
 </body>
 </html>

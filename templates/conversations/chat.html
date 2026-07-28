@@ -1,166 +1,18 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block content %}
 
-<div class="bot-hero">
+{% block title %}
+  {{ conversation.chatbot.name }} | CoachBot Platform
+{% endblock %}
 
-  {% if "Conflict" in conversation.chatbot.name %}
-    <img src="{% static 'img/conflict-coachbot-logo.png' %}" class="bot-logo" alt="Conflict CoachBot Logo">
-  {% elif "RISE" in conversation.chatbot.name %}
-    <img src="{% static 'img/RISE.png' %}" class="bot-logo" alt="RISE CoachBot Logo">
-  {% elif "DESC" in conversation.chatbot.name %}
-    <img src="{% static 'img/DESC.png' %}" class="bot-logo" alt="DESC CoachBot Logo">
-  {% elif "SEA" in conversation.chatbot.name %}
-    <img src="{% static 'img/SEA.png' %}" class="bot-logo" alt="SEA CoachBot Logo">
-  {% elif "PAUSE" in conversation.chatbot.name %}
-    <img src="{% static 'img/PAUSE.png' %}" class="bot-logo" alt="PAUSE CoachBot Logo">
-  {% endif %}
 
-  <h1>{{ conversation.chatbot.name }}</h1>
-  <p class="byline">By RICK REJELEENE ♙</p>
-
-  {% if "Conflict" in conversation.chatbot.name %}
-    <p class="bot-description">
-      The conflict bot will help you work through complex conflicts by focusing on interests and practical relationship repair steps.
-    </p>
-  {% elif "RISE" in conversation.chatbot.name %}
-    <p class="bot-description">
-      The RISE bot helps users build psychologically safer communication through rapport, curiosity, norms, and effective messaging.
-    </p>
-  {% elif "DESC" in conversation.chatbot.name %}
-    <p class="bot-description">
-      The DESC bot helps you prepare assertive conversations using Describe, Express, Specify, and Consequences.
-    </p>
-  {% elif "PAUSE" in conversation.chatbot.name %}
-    <p class="bot-description">
-      The PAUSE bot helps you slow down, listen, regulate emotion, and respond with curiosity.
-    </p>
-  {% elif "SEA" in conversation.chatbot.name %}
-    <p class="bot-description">
-      The SEA bot helps users clearly state a concern, explain the reason or impact, and ask an open-ended question.
-    </p>
-  {% endif %}
-</div>
-
-<div class="starter-grid">
-  {% if "Conflict" in conversation.chatbot.name %}
-    <button class="starter-card" onclick="sendStarter('I want to Learn about Conflict Transformation')">
-      I want to Learn<br>about Conflict<br>Transformation
-    </button>
-    <button class="starter-card" onclick="sendStarter('I want to Practice using Conflict Transformation')">
-      I want to Practice<br>using Conflict<br>Transformation
-    </button>
-    <button class="starter-card" onclick="sendStarter('Help me use Conflict Transformation for my situation')">
-      Help me<br>use Conflict<br>Transformation for...
-    </button>
-    <button class="starter-card" onclick="sendStarter('Create a training scenario for Conflict Transformation')">
-      Create a training<br>scenario<br>for Conflict...
-    </button>
-
-  {% elif "RISE" in conversation.chatbot.name %}
-    <button class="starter-card" onclick="sendStarter('I want to Learn about RISE')">
-      I want to Learn<br>about RISE
-    </button>
-    <button class="starter-card" onclick="sendStarter('I want to Practice using RISE')">
-      I want to Practice<br>using RISE
-    </button>
-    <button class="starter-card" onclick="sendStarter('Help me use RISE for my situation')">
-      Help me<br>use RISE<br>for my situation
-    </button>
-    <button class="starter-card" onclick="sendStarter('Create a training scenario for RISE')">
-      Create a training<br>scenario<br>for RISE
-    </button>
-
-  {% elif "DESC" in conversation.chatbot.name %}
-    <button class="starter-card" onclick="sendStarter('I want to Learn about DESC')">
-      I want to Learn<br>about DESC
-    </button>
-    <button class="starter-card" onclick="sendStarter('I want to Practice using DESC')">
-      I want to Practice<br>using DESC
-    </button>
-    <button class="starter-card" onclick="sendStarter('Help me use DESC for my situation')">
-      Help me<br>use DESC<br>for my situation
-    </button>
-    <button class="starter-card" onclick="sendStarter('Create a training scenario for DESC')">
-      Create a training<br>scenario<br>for DESC
-    </button>
-
-  {% elif "PAUSE" in conversation.chatbot.name %}
-    <button class="starter-card" onclick="sendStarter('I want to Learn about PAUSE')">
-      I want to Learn<br>about PAUSE
-    </button>
-    <button class="starter-card" onclick="sendStarter('I want to Practice using PAUSE')">
-      I want to Practice<br>using PAUSE
-    </button>
-    <button class="starter-card" onclick="sendStarter('Help me use PAUSE for my situation')">
-      Help me<br>use PAUSE<br>for my situation
-    </button>
-    <button class="starter-card" onclick="sendStarter('Create a training scenario for PAUSE')">
-      Create a training<br>scenario<br>for PAUSE
-    </button>
-
-  {% elif "SEA" in conversation.chatbot.name %}
-    <button class="starter-card" onclick="sendStarter('I want to Learn about SEA')">
-      I want to Learn<br>about SEA
-    </button>
-    <button class="starter-card" onclick="sendStarter('I want to Practice using SEA')">
-      I want to Practice<br>using SEA
-    </button>
-    <button class="starter-card" onclick="sendStarter('Help me use SEA for my situation')">
-      Help me<br>use SEA<br>for my situation
-    </button>
-    <button class="starter-card" onclick="sendStarter('Create a training scenario for SEA')">
-      Create a training<br>scenario<br>for SEA
-    </button>
-  {% endif %}
-</div>
-
-<div class="card">
-  <h2>{{ conversation.chatbot.name }}</h2>
-  <p><strong>Framework:</strong> {{ conversation.chatbot.framework }}</p>
-
-  <label for="model_id"><strong>Model:</strong></label>
-  <select id="model_id">
-    {% for model in models %}
-      {% if model.is_active %}
-        <option value="{{ model.id }}" {% if conversation.model.id == model.id %}selected{% endif %}>
-          {{ model.display_name }}
-        </option>
-      {% endif %}
-    {% endfor %}
-  </select>
-</div>
-
-<div class="chat-box" id="chatBox">
-  {% for message in messages %}
-    <div class="msg {{ message.role }}">
-      <strong>
-        {% if message.role == "user" %}
-          {% if user.is_authenticated %}
-            {{ user.username }}
-          {% else %}
-            {{ request.session.guest_name|default:"Guest" }}
-          {% endif %}
-        {% else %}
-          Assistant
-        {% endif %}
-      </strong>
-      <p>{{ message.content|linebreaksbr }}</p>
-    </div>
-  {% endfor %}
-</div>
-
-<div class="card">
-  <form id="chatForm">
-    {% csrf_token %}
-    <textarea id="messageInput" rows="3" style="width:100%;" placeholder="Type your message..."></textarea>
-    <br><br>
-    <button type="submit" id="sendButton">Send</button>
-  </form>
-</div>
-
+{% block extra_css %}
 <style>
+  /* =========================================================
+     COACHBOT HEADER
+     ========================================================= */
+
   .bot-hero {
     text-align: center;
     padding: 30px 20px 55px;
@@ -194,9 +46,14 @@
     line-height: 1.45;
   }
 
+
+  /* =========================================================
+     STARTER CARDS
+     ========================================================= */
+
   .starter-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 28px;
     margin: -25px auto 35px;
     max-width: 1050px;
@@ -212,23 +69,40 @@
     line-height: 1.5;
     text-align: left;
     min-height: 150px;
-    box-shadow: 0 3px 10px rgba(0,0,0,.08);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
     cursor: pointer;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease,
+      border-color 0.15s ease;
   }
 
   .starter-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0,0,0,.12);
+    border-color: #bfdbfe;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
   }
 
   .starter-card:disabled,
-  #sendButton:disabled {
+  #sendButton:disabled,
+  #endConversationButton:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
+  }
+
+
+  /* =========================================================
+     CHAT
+     ========================================================= */
+
+  .chat-box {
+    scroll-behavior: smooth;
   }
 
   .msg p {
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .typing-cursor::after {
@@ -237,23 +111,290 @@
   }
 
   @keyframes blink {
-    0%, 50% {
+    0%,
+    50% {
       opacity: 1;
     }
-    51%, 100% {
+
+    51%,
+    100% {
       opacity: 0;
     }
   }
 
+  .chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .end-conversation-button {
+    background: #475569;
+  }
+
+  .end-conversation-button:hover {
+    background: #334155;
+  }
+
+
+  /* =========================================================
+     FEEDBACK MODAL
+     ========================================================= */
+
+  .feedback-modal[hidden] {
+    display: none;
+  }
+
+  .feedback-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .feedback-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.68);
+  }
+
+  .feedback-modal-panel {
+    position: relative;
+    z-index: 1;
+    width: min(820px, 100%);
+    max-height: 92vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 18px;
+    padding: 32px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
+  }
+
+  .feedback-modal-panel h2 {
+    margin: 0;
+    padding-right: 42px;
+    font-size: 28px;
+  }
+
+  .feedback-modal-introduction {
+    color: #64748b;
+    line-height: 1.5;
+    margin: 10px 0 0;
+  }
+
+  .feedback-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: transparent;
+    color: #475569;
+    border: 0;
+    padding: 4px;
+    font-size: 34px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .feedback-modal-close:hover {
+    color: #0f172a;
+    background: transparent;
+  }
+
+  .feedback-question {
+    border: 0;
+    padding: 0;
+    margin: 28px 0;
+  }
+
+  .feedback-question legend,
+  .feedback-question > label {
+    display: block;
+    margin-bottom: 14px;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.45;
+  }
+
+
+  /* =========================================================
+     LIKERT SCALE
+     ========================================================= */
+
+  .likert-options {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(100px, 1fr));
+    gap: 10px;
+  }
+
+  .likert-option {
+    position: relative;
+    min-height: 125px;
+    border: 2px solid #dbe3ea;
+    border-radius: 12px;
+    padding: 14px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    text-align: center;
+    cursor: pointer;
+    background: white;
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .likert-option:hover {
+    border-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+  }
+
+  .likert-option:has(input:checked) {
+    border-color: #2563eb;
+    background: #eff6ff;
+    box-shadow: 0 0 0 1px #2563eb;
+  }
+
+  .likert-option:focus-within {
+    outline: 3px solid rgba(37, 99, 235, 0.22);
+    outline-offset: 2px;
+  }
+
+  .likert-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .likert-number {
+    width: 42px;
+    height: 42px;
+    border: 2px solid #2563eb;
+    border-radius: 50%;
+    color: #2563eb;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .likert-label {
+    font-size: 14px;
+    line-height: 1.3;
+    color: #334155;
+  }
+
+
+  /* =========================================================
+     FEEDBACK TEXTBOX AND BUTTONS
+     ========================================================= */
+
+  #improvementFeedback {
+    width: 100%;
+    min-height: 130px;
+    box-sizing: border-box;
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  #improvementFeedback:focus {
+    border-color: #2563eb;
+    outline: 3px solid rgba(37, 99, 235, 0.16);
+  }
+
+  .feedback-form-message {
+    min-height: 24px;
+    margin: 12px 0;
+    font-weight: 600;
+  }
+
+  .feedback-form-message.error {
+    color: #b91c1c;
+  }
+
+  .feedback-form-message.success {
+    color: #047857;
+  }
+
+  .feedback-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .feedback-secondary-button {
+    background: white;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+  }
+
+  .feedback-secondary-button:hover {
+    background: #f8fafc;
+  }
+
+  body.feedback-modal-open {
+    overflow: hidden;
+  }
+
+
+  /* =========================================================
+     RESPONSIVE DESIGN
+     ========================================================= */
+
   @media (max-width: 900px) {
     .starter-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .likert-options {
+      grid-template-columns: repeat(5, minmax(90px, 1fr));
+    }
+
+    .feedback-modal-panel {
+      padding: 28px 22px;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .likert-options {
+      grid-template-columns: 1fr;
+    }
+
+    .likert-option {
+      min-height: auto;
+      flex-direction: row;
+      justify-content: flex-start;
+      text-align: left;
+      padding: 12px;
+    }
+
+    .feedback-modal-actions {
+      flex-direction: column-reverse;
+    }
+
+    .feedback-modal-actions button {
+      width: 100%;
     }
   }
 
   @media (max-width: 600px) {
     .starter-grid {
       grid-template-columns: 1fr;
+    }
+
+    .bot-hero {
+      padding: 24px 16px 45px;
     }
 
     .bot-hero h1 {
@@ -267,25 +408,708 @@
     .starter-card {
       font-size: 20px;
     }
+
+    .feedback-modal {
+      padding: 10px;
+    }
+
+    .feedback-modal-panel {
+      padding: 26px 18px;
+      border-radius: 14px;
+    }
+
+    .feedback-modal-panel h2 {
+      font-size: 23px;
+    }
+
+    .chat-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .chat-actions button {
+      width: 100%;
+    }
   }
 </style>
+{% endblock %}
 
+
+{% block content %}
+
+<div class="bot-hero">
+
+  {% if "Conflict" in conversation.chatbot.name %}
+    <img
+      src="{% static 'img/conflict-coachbot-logo.png' %}"
+      class="bot-logo"
+      alt="Conflict CoachBot Logo"
+    >
+
+  {% elif "RISE" in conversation.chatbot.name %}
+    <img
+      src="{% static 'img/RISE.png' %}"
+      class="bot-logo"
+      alt="RISE CoachBot Logo"
+    >
+
+  {% elif "DESC" in conversation.chatbot.name %}
+    <img
+      src="{% static 'img/DESC.png' %}"
+      class="bot-logo"
+      alt="DESC CoachBot Logo"
+    >
+
+  {% elif "SEA" in conversation.chatbot.name %}
+    <img
+      src="{% static 'img/SEA.png' %}"
+      class="bot-logo"
+      alt="SEA CoachBot Logo"
+    >
+
+  {% elif "PAUSE" in conversation.chatbot.name %}
+    <img
+      src="{% static 'img/PAUSE.png' %}"
+      class="bot-logo"
+      alt="PAUSE CoachBot Logo"
+    >
+  {% endif %}
+
+  <h1>{{ conversation.chatbot.name }}</h1>
+
+  <p class="byline">
+    By RICK REJELEENE ♙
+  </p>
+
+  {% if "Conflict" in conversation.chatbot.name %}
+    <p class="bot-description">
+      The conflict bot will help you work through complex conflicts by
+      focusing on interests and practical relationship repair steps.
+    </p>
+
+  {% elif "RISE" in conversation.chatbot.name %}
+    <p class="bot-description">
+      The RISE bot helps users build psychologically safer communication
+      through rapport, curiosity, norms, and effective messaging.
+    </p>
+
+  {% elif "DESC" in conversation.chatbot.name %}
+    <p class="bot-description">
+      The DESC bot helps you prepare assertive conversations using
+      Describe, Express, Specify, and Consequences.
+    </p>
+
+  {% elif "PAUSE" in conversation.chatbot.name %}
+    <p class="bot-description">
+      The PAUSE bot helps you slow down, listen, regulate emotion, and
+      respond with curiosity.
+    </p>
+
+  {% elif "SEA" in conversation.chatbot.name %}
+    <p class="bot-description">
+      The SEA bot helps users clearly state a concern, explain the reason
+      or impact, and ask an open-ended question.
+    </p>
+  {% endif %}
+</div>
+
+
+<div class="starter-grid">
+
+  {% if "Conflict" in conversation.chatbot.name %}
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('I want to Learn about Conflict Transformation')"
+    >
+      I want to Learn<br>
+      about Conflict<br>
+      Transformation
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('I want to Practice using Conflict Transformation')"
+    >
+      I want to Practice<br>
+      using Conflict<br>
+      Transformation
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('Help me use Conflict Transformation for my situation')"
+    >
+      Help me<br>
+      use Conflict<br>
+      Transformation for...
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('Create a training scenario for Conflict Transformation')"
+    >
+      Create a training<br>
+      scenario<br>
+      for Conflict...
+    </button>
+
+
+  {% elif "RISE" in conversation.chatbot.name %}
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('I want to Learn about RISE')"
+    >
+      I want to Learn<br>
+      about RISE
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('I want to Practice using RISE')"
+    >
+      I want to Practice<br>
+      using RISE
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('Help me use RISE for my situation')"
+    >
+      Help me<br>
+      use RISE<br>
+      for my situation
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('Create a training scenario for RISE')"
+    >
+      Create a training<br>
+      scenario<br>
+      for RISE
+    </button>
+
+
+  {% elif "DESC" in conversation.chatbot.name %}
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('I want to Learn about DESC')"
+    >
+      I want to Learn<br>
+      about DESC
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('I want to Practice using DESC')"
+    >
+      I want to Practice<br>
+      using DESC
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('Help me use DESC for my situation')"
+    >
+      Help me<br>
+      use DESC<br>
+      for my situation
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('Create a training scenario for DESC')"
+    >
+      Create a training<br>
+      scenario<br>
+      for DESC
+    </button>
+
+
+  {% elif "PAUSE" in conversation.chatbot.name %}
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('I want to Learn about PAUSE')"
+    >
+      I want to Learn<br>
+      about PAUSE
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('I want to Practice using PAUSE')"
+    >
+      I want to Practice<br>
+      using PAUSE
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('Help me use PAUSE for my situation')"
+    >
+      Help me<br>
+      use PAUSE<br>
+      for my situation
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('Create a training scenario for PAUSE')"
+    >
+      Create a training<br>
+      scenario<br>
+      for PAUSE
+    </button>
+
+
+  {% elif "SEA" in conversation.chatbot.name %}
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('I want to Learn about SEA')"
+    >
+      I want to Learn<br>
+      about SEA
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('I want to Practice using SEA')"
+    >
+      I want to Practice<br>
+      using SEA
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('Help me use SEA for my situation')"
+    >
+      Help me<br>
+      use SEA<br>
+      for my situation
+    </button>
+
+    <button
+      type="button"
+      class="starter-card"
+      onclick="sendStarter('Create a training scenario for SEA')"
+    >
+      Create a training<br>
+      scenario<br>
+      for SEA
+    </button>
+
+  {% endif %}
+</div>
+
+
+<div class="card">
+  <h2>{{ conversation.chatbot.name }}</h2>
+
+  <p>
+    <strong>Framework:</strong>
+    {{ conversation.chatbot.framework }}
+  </p>
+
+  <label for="model_id">
+    <strong>Model:</strong>
+  </label>
+
+  <select id="model_id">
+    {% for model in models %}
+      {% if model.is_active %}
+        <option
+          value="{{ model.id }}"
+          {% if conversation.model.id == model.id %}selected{% endif %}
+        >
+          {{ model.display_name }}
+        </option>
+      {% endif %}
+    {% endfor %}
+  </select>
+</div>
+
+
+<div class="chat-box" id="chatBox">
+  {% for message in messages %}
+    <div class="msg {{ message.role }}">
+      <strong>
+        {% if message.role == "user" %}
+          {% if user.is_authenticated %}
+            {{ user.username }}
+          {% else %}
+            {{ request.session.guest_name|default:"Guest" }}
+          {% endif %}
+        {% else %}
+          Assistant
+        {% endif %}
+      </strong>
+
+      <p>{{ message.content|linebreaksbr }}</p>
+    </div>
+  {% endfor %}
+</div>
+
+
+<div class="card">
+  <form id="chatForm">
+    {% csrf_token %}
+
+    <textarea
+      id="messageInput"
+      rows="3"
+      style="width: 100%;"
+      placeholder="Type your message..."
+      aria-label="Message"
+    ></textarea>
+
+    <br><br>
+
+    <div class="chat-actions">
+      <button
+        type="submit"
+        id="sendButton"
+      >
+        Send
+      </button>
+
+      <button
+        type="button"
+        id="endConversationButton"
+        class="end-conversation-button"
+      >
+        End Conversation
+      </button>
+    </div>
+  </form>
+</div>
+
+
+<!-- =========================================================
+     FEEDBACK MODAL
+     ========================================================= -->
+
+<div
+  id="feedbackModal"
+  class="feedback-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="feedbackModalTitle"
+  hidden
+>
+  <div
+    id="feedbackModalBackdrop"
+    class="feedback-modal-backdrop"
+  ></div>
+
+  <div class="feedback-modal-panel">
+
+    <button
+      type="button"
+      id="closeFeedbackModalButton"
+      class="feedback-modal-close"
+      aria-label="Close feedback form"
+    >
+      &times;
+    </button>
+
+    <h2 id="feedbackModalTitle">
+      Tell us about your CoachBot experience
+    </h2>
+
+    <p class="feedback-modal-introduction">
+      Your responses will help us improve the CoachBot experience.
+    </p>
+
+    <form
+      id="feedbackForm"
+      data-submit-url="{% url 'submit_feedback' conversation.id %}"
+    >
+      {% csrf_token %}
+
+      <fieldset class="feedback-question">
+        <legend>
+          1. How useful was your interaction with the CoachBot?
+        </legend>
+
+        <div class="likert-options">
+
+          <label class="likert-option">
+            <input
+              type="radio"
+              name="usefulness"
+              value="1"
+              required
+            >
+
+            <span class="likert-number">1</span>
+            <span class="likert-label">Not useful</span>
+          </label>
+
+          <label class="likert-option">
+            <input
+              type="radio"
+              name="usefulness"
+              value="2"
+            >
+
+            <span class="likert-number">2</span>
+            <span class="likert-label">Slightly useful</span>
+          </label>
+
+          <label class="likert-option">
+            <input
+              type="radio"
+              name="usefulness"
+              value="3"
+            >
+
+            <span class="likert-number">3</span>
+            <span class="likert-label">Moderately useful</span>
+          </label>
+
+          <label class="likert-option">
+            <input
+              type="radio"
+              name="usefulness"
+              value="4"
+            >
+
+            <span class="likert-number">4</span>
+            <span class="likert-label">Very useful</span>
+          </label>
+
+          <label class="likert-option">
+            <input
+              type="radio"
+              name="usefulness"
+              value="5"
+            >
+
+            <span class="likert-number">5</span>
+            <span class="likert-label">Extremely useful</span>
+          </label>
+
+        </div>
+      </fieldset>
+
+
+      <fieldset class="feedback-question">
+        <legend>
+          2. How confident do you feel now, after practicing with the
+          CoachBot?
+        </legend>
+
+        <div class="likert-options">
+
+          <label class="likert-option">
+            <input
+              type="radio"
+              name="confidence"
+              value="1"
+              required
+            >
+
+            <span class="likert-number">1</span>
+            <span class="likert-label">Not confident</span>
+          </label>
+
+          <label class="likert-option">
+            <input
+              type="radio"
+              name="confidence"
+              value="2"
+            >
+
+            <span class="likert-number">2</span>
+            <span class="likert-label">Slightly confident</span>
+          </label>
+
+          <label class="likert-option">
+            <input
+              type="radio"
+              name="confidence"
+              value="3"
+            >
+
+            <span class="likert-number">3</span>
+            <span class="likert-label">Moderately confident</span>
+          </label>
+
+          <label class="likert-option">
+            <input
+              type="radio"
+              name="confidence"
+              value="4"
+            >
+
+            <span class="likert-number">4</span>
+            <span class="likert-label">Very confident</span>
+          </label>
+
+          <label class="likert-option">
+            <input
+              type="radio"
+              name="confidence"
+              value="5"
+            >
+
+            <span class="likert-number">5</span>
+            <span class="likert-label">Extremely confident</span>
+          </label>
+
+        </div>
+      </fieldset>
+
+
+      <div class="feedback-question">
+        <label for="improvementFeedback">
+          3. How can we improve?
+        </label>
+
+        <textarea
+          id="improvementFeedback"
+          name="improvement_feedback"
+          rows="5"
+          maxlength="5000"
+          placeholder="Please share any suggestions or comments..."
+        ></textarea>
+      </div>
+
+
+      <p
+        id="feedbackFormMessage"
+        class="feedback-form-message"
+        aria-live="polite"
+      ></p>
+
+
+      <div class="feedback-modal-actions">
+
+        <button
+          type="button"
+          id="continueConversationButton"
+          class="feedback-secondary-button"
+        >
+          Continue Conversation
+        </button>
+
+        <button
+          type="submit"
+          id="submitFeedbackButton"
+        >
+          Submit Feedback
+        </button>
+
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
 <script>
-  const chatForm = document.getElementById("chatForm");
-  const messageInput = document.getElementById("messageInput");
-  const chatBox = document.getElementById("chatBox");
-  const modelSelect = document.getElementById("model_id");
-  const sendButton = document.getElementById("sendButton");
-  const starterButtons = document.querySelectorAll(".starter-card");
+  /* =========================================================
+     DOM ELEMENTS
+     ========================================================= */
 
-  const currentUser = "{% if user.is_authenticated %}{{ user.username|escapejs }}{% else %}{{ request.session.guest_name|default:'Guest'|escapejs }}{% endif %}";
-  const sendStreamUrl = "{% url 'send_message_stream' conversation.id %}";
-  const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+  const chatForm =
+    document.getElementById("chatForm");
+
+  const messageInput =
+    document.getElementById("messageInput");
+
+  const chatBox =
+    document.getElementById("chatBox");
+
+  const modelSelect =
+    document.getElementById("model_id");
+
+  const sendButton =
+    document.getElementById("sendButton");
+
+  const starterButtons =
+    document.querySelectorAll(".starter-card");
+
+  const endConversationButton =
+    document.getElementById("endConversationButton");
+
+  const feedbackModal =
+    document.getElementById("feedbackModal");
+
+  const feedbackModalBackdrop =
+    document.getElementById("feedbackModalBackdrop");
+
+  const closeFeedbackModalButton =
+    document.getElementById("closeFeedbackModalButton");
+
+  const continueConversationButton =
+    document.getElementById("continueConversationButton");
+
+  const feedbackForm =
+    document.getElementById("feedbackForm");
+
+  const submitFeedbackButton =
+    document.getElementById("submitFeedbackButton");
+
+  const feedbackFormMessage =
+    document.getElementById("feedbackFormMessage");
+
+
+  /* =========================================================
+     DJANGO VALUES
+     ========================================================= */
+
+  const currentUser =
+    "{% if user.is_authenticated %}{{ user.username|escapejs }}{% else %}{{ request.session.guest_name|default:'Guest'|escapejs }}{% endif %}";
+
+  const sendStreamUrl =
+    "{% url 'send_message_stream' conversation.id %}";
+
+  const csrfToken =
+    chatForm.querySelector("[name=csrfmiddlewaretoken]").value;
+
+
+  /* =========================================================
+     APPLICATION STATE
+     ========================================================= */
 
   let isSending = false;
+  let feedbackSubmitted = false;
+
+
+  /* =========================================================
+     CHAT HELPERS
+     ========================================================= */
 
   function setSendingState(value) {
     isSending = value;
+
     sendButton.disabled = value;
     modelSelect.disabled = value;
 
@@ -293,31 +1117,43 @@
       button.disabled = value;
     });
 
-    sendButton.textContent = value ? "Sending..." : "Send";
+    if (!feedbackSubmitted) {
+      endConversationButton.disabled = value;
+    }
+
+    sendButton.textContent =
+      value ? "Sending..." : "Send";
   }
+
 
   function scrollToBottom() {
     chatBox.scrollTop = chatBox.scrollHeight;
   }
+
 
   function appendMessage(sender, content) {
     const div = document.createElement("div");
     div.className = "msg " + sender;
 
     const strong = document.createElement("strong");
-    strong.textContent = sender === "user" ? currentUser : "Assistant";
 
-    const p = document.createElement("p");
-    p.textContent = content;
+    strong.textContent =
+      sender === "user"
+        ? currentUser
+        : "Assistant";
+
+    const paragraph = document.createElement("p");
+    paragraph.textContent = content;
 
     div.appendChild(strong);
-    div.appendChild(p);
+    div.appendChild(paragraph);
 
     chatBox.appendChild(div);
     scrollToBottom();
 
-    return p;
+    return paragraph;
   }
+
 
   function appendAssistantStreamingBubble() {
     const div = document.createElement("div");
@@ -326,31 +1162,41 @@
     const strong = document.createElement("strong");
     strong.textContent = "Assistant";
 
-    const p = document.createElement("p");
-    p.className = "typing-cursor";
-    p.textContent = "";
+    const paragraph = document.createElement("p");
+    paragraph.className = "typing-cursor";
+    paragraph.textContent = "";
 
     div.appendChild(strong);
-    div.appendChild(p);
+    div.appendChild(paragraph);
 
     chatBox.appendChild(div);
     scrollToBottom();
 
-    return p;
+    return paragraph;
   }
 
+
   function parseSSEEvents(buffer) {
-    const events = buffer.split("\n\n");
-    const remainingBuffer = events.pop();
+    const normalizedBuffer =
+      buffer.replace(/\r\n/g, "\n");
+
+    const events =
+      normalizedBuffer.split("\n\n");
+
+    const remainingBuffer =
+      events.pop();
 
     return {
-      events: events,
-      remainingBuffer: remainingBuffer
+      events,
+      remainingBuffer
     };
   }
 
+
   function getEventData(rawEvent) {
-    const lines = rawEvent.split("\n");
+    const lines =
+      rawEvent.split("\n");
+
     const dataLines = lines
       .filter(line => line.startsWith("data: "))
       .map(line => line.slice(6));
@@ -360,70 +1206,126 @@
     }
 
     try {
-      return JSON.parse(dataLines.join("\n"));
+      return JSON.parse(
+        dataLines.join("\n")
+      );
+
     } catch (error) {
-      console.error("Could not parse SSE data:", error);
+      console.error(
+        "Could not parse SSE data:",
+        error
+      );
+
       return null;
     }
   }
 
+
+  /* =========================================================
+     SEND CHAT MESSAGE
+     ========================================================= */
+
   async function sendMessage(message) {
-    const cleanedMessage = message.trim();
+    const cleanedMessage =
+      message.trim();
 
     if (!cleanedMessage || isSending) {
       return;
     }
 
-    appendMessage("user", cleanedMessage);
+    appendMessage(
+      "user",
+      cleanedMessage
+    );
+
     messageInput.value = "";
 
-    const assistantBubble = appendAssistantStreamingBubble();
+    const assistantBubble =
+      appendAssistantStreamingBubble();
 
-    const formData = new FormData();
-    formData.append("message", cleanedMessage);
-    formData.append("model_id", modelSelect.value);
-    formData.append("csrfmiddlewaretoken", csrfToken);
+    const formData =
+      new FormData();
+
+    formData.append(
+      "message",
+      cleanedMessage
+    );
+
+    formData.append(
+      "model_id",
+      modelSelect.value
+    );
+
+    formData.append(
+      "csrfmiddlewaretoken",
+      csrfToken
+    );
 
     setSendingState(true);
 
     try {
-      const response = await fetch(sendStreamUrl, {
-        method: "POST",
-        body: formData
-      });
+      const response = await fetch(
+        sendStreamUrl,
+        {
+          method: "POST",
+          body: formData
+        }
+      );
 
       if (!response.ok) {
-        assistantBubble.classList.remove("typing-cursor");
-        assistantBubble.textContent = "Error: server returned " + response.status;
+        assistantBubble.classList.remove(
+          "typing-cursor"
+        );
+
+        assistantBubble.textContent =
+          "Error: server returned " +
+          response.status;
+
         return;
       }
 
       if (!response.body) {
-        assistantBubble.classList.remove("typing-cursor");
-        assistantBubble.textContent = "Streaming is not supported in this browser.";
+        assistantBubble.classList.remove(
+          "typing-cursor"
+        );
+
+        assistantBubble.textContent =
+          "Streaming is not supported in this browser.";
+
         return;
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
+      const reader =
+        response.body.getReader();
+
+      const decoder =
+        new TextDecoder("utf-8");
 
       let buffer = "";
       let fullReply = "";
 
       while (true) {
-        const result = await reader.read();
+        const result =
+          await reader.read();
 
         if (result.done) {
           break;
         }
 
-        buffer += decoder.decode(result.value, { stream: true });
+        buffer += decoder.decode(
+          result.value,
+          { stream: true }
+        );
 
-        const parsed = parseSSEEvents(buffer);
-        buffer = parsed.remainingBuffer;
+        const parsed =
+          parseSSEEvents(buffer);
+
+        buffer =
+          parsed.remainingBuffer;
 
         for (const rawEvent of parsed.events) {
-          const data = getEventData(rawEvent);
+          const data =
+            getEventData(rawEvent);
 
           if (!data) {
             continue;
@@ -431,61 +1333,331 @@
 
           if (data.token) {
             fullReply += data.token;
-            assistantBubble.textContent = fullReply;
+
+            assistantBubble.textContent =
+              fullReply;
+
             scrollToBottom();
           }
 
           if (data.status === "done") {
-            assistantBubble.classList.remove("typing-cursor");
+            assistantBubble.classList.remove(
+              "typing-cursor"
+            );
 
             if (data.reply) {
-              assistantBubble.textContent = data.reply;
+              assistantBubble.textContent =
+                data.reply;
             }
 
             scrollToBottom();
           }
 
-          if (data.status === "error" || data.error) {
-            assistantBubble.classList.remove("typing-cursor");
-            assistantBubble.textContent = data.error || "Error generating response.";
+          if (
+            data.status === "error" ||
+            data.error
+          ) {
+            assistantBubble.classList.remove(
+              "typing-cursor"
+            );
+
+            assistantBubble.textContent =
+              data.error ||
+              "Error generating response.";
+
             scrollToBottom();
           }
         }
       }
 
-      assistantBubble.classList.remove("typing-cursor");
+      assistantBubble.classList.remove(
+        "typing-cursor"
+      );
 
       if (!assistantBubble.textContent.trim()) {
-        assistantBubble.textContent = "No response received.";
+        assistantBubble.textContent =
+          "No response received.";
       }
 
     } catch (error) {
       console.error(error);
-      assistantBubble.classList.remove("typing-cursor");
-      assistantBubble.textContent = "Error: Could not connect to the CoachBot server.";
+
+      assistantBubble.classList.remove(
+        "typing-cursor"
+      );
+
+      assistantBubble.textContent =
+        "Error: Could not connect to the CoachBot server.";
+
     } finally {
       setSendingState(false);
       messageInput.focus();
     }
   }
 
+
   function sendStarter(text) {
     sendMessage(text);
   }
 
-  chatForm.addEventListener("submit", function(e) {
-    e.preventDefault();
-    sendMessage(messageInput.value);
-  });
 
-  messageInput.addEventListener("keydown", function(e) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(messageInput.value);
+  /* =========================================================
+     FEEDBACK MODAL
+     ========================================================= */
+
+  function openFeedbackModal() {
+    if (isSending || feedbackSubmitted) {
+      return;
     }
-  });
+
+    feedbackModal.hidden = false;
+
+    document.body.classList.add(
+      "feedback-modal-open"
+    );
+
+    showFeedbackMessage("");
+
+    const firstRating =
+      feedbackForm.querySelector(
+        'input[name="usefulness"]'
+      );
+
+    if (firstRating) {
+      firstRating.focus();
+    }
+  }
+
+
+  function closeFeedbackModal() {
+    feedbackModal.hidden = true;
+
+    document.body.classList.remove(
+      "feedback-modal-open"
+    );
+
+    if (!feedbackSubmitted) {
+      messageInput.focus();
+    }
+  }
+
+
+  function showFeedbackMessage(
+    message,
+    type = ""
+  ) {
+    feedbackFormMessage.textContent =
+      message;
+
+    feedbackFormMessage.className =
+      "feedback-form-message";
+
+    if (type) {
+      feedbackFormMessage.classList.add(
+        type
+      );
+    }
+  }
+
+
+  async function submitCoachbotFeedback(event) {
+    event.preventDefault();
+
+    if (feedbackSubmitted) {
+      return;
+    }
+
+    const formData =
+      new FormData(feedbackForm);
+
+    const usefulness =
+      formData.get("usefulness");
+
+    const confidence =
+      formData.get("confidence");
+
+    const improvementFeedback =
+      formData.get(
+        "improvement_feedback"
+      ) || "";
+
+    if (!usefulness || !confidence) {
+      showFeedbackMessage(
+        "Please answer both rating questions.",
+        "error"
+      );
+
+      return;
+    }
+
+    submitFeedbackButton.disabled = true;
+
+    submitFeedbackButton.textContent =
+      "Submitting...";
+
+    showFeedbackMessage(
+      "Saving your feedback..."
+    );
+
+    try {
+      const response = await fetch(
+        feedbackForm.dataset.submitUrl,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+          },
+
+          body: JSON.stringify({
+            usefulness:
+              Number(usefulness),
+
+            confidence:
+              Number(confidence),
+
+            improvement_feedback:
+              improvementFeedback.trim()
+          })
+        }
+      );
+
+      let result = {};
+
+      try {
+        result =
+          await response.json();
+
+      } catch (parseError) {
+        throw new Error(
+          "The server returned an invalid response."
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ||
+          "Unable to save feedback."
+        );
+      }
+
+      feedbackSubmitted = true;
+
+      showFeedbackMessage(
+        "Thank you. Your feedback has been saved.",
+        "success"
+      );
+
+      endConversationButton.disabled = true;
+
+      endConversationButton.textContent =
+        "Feedback Submitted";
+
+      submitFeedbackButton.textContent =
+        "Submitted";
+
+      setTimeout(() => {
+        closeFeedbackModal();
+      }, 1400);
+
+    } catch (error) {
+      console.error(error);
+
+      showFeedbackMessage(
+        error.message ||
+        "Unable to submit feedback.",
+        "error"
+      );
+
+      submitFeedbackButton.disabled = false;
+
+      submitFeedbackButton.textContent =
+        "Submit Feedback";
+    }
+  }
+
+
+  /* =========================================================
+     EVENT LISTENERS
+     ========================================================= */
+
+  chatForm.addEventListener(
+    "submit",
+    function(event) {
+      event.preventDefault();
+
+      sendMessage(
+        messageInput.value
+      );
+    }
+  );
+
+
+  messageInput.addEventListener(
+    "keydown",
+    function(event) {
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey
+      ) {
+        event.preventDefault();
+
+        sendMessage(
+          messageInput.value
+        );
+      }
+    }
+  );
+
+
+  endConversationButton.addEventListener(
+    "click",
+    openFeedbackModal
+  );
+
+
+  closeFeedbackModalButton.addEventListener(
+    "click",
+    closeFeedbackModal
+  );
+
+
+  continueConversationButton.addEventListener(
+    "click",
+    closeFeedbackModal
+  );
+
+
+  feedbackModalBackdrop.addEventListener(
+    "click",
+    closeFeedbackModal
+  );
+
+
+  feedbackForm.addEventListener(
+    "submit",
+    submitCoachbotFeedback
+  );
+
+
+  document.addEventListener(
+    "keydown",
+    function(event) {
+      if (
+        event.key === "Escape" &&
+        !feedbackModal.hidden
+      ) {
+        closeFeedbackModal();
+      }
+    }
+  );
+
+
+  /* =========================================================
+     PAGE INITIALIZATION
+     ========================================================= */
 
   scrollToBottom();
 </script>
-
 {% endblock %}

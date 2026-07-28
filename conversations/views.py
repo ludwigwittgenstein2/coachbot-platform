@@ -9,8 +9,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-from analytics.models import UsageLog
+from analytics.models import CoachbotFeedback, UsageLog
 from bots.models import Chatbot, OllamaModel
+
 from .models import Conversation, Message
 from .ollama_client import OllamaError, ask_ollama, stream_ollama
 
@@ -58,6 +59,9 @@ Interaction rules:
 
 
 def get_pathway_rules(user_message):
+    """
+    Determine how the CoachBot should respond based on the user's request.
+    """
     msg = user_message.lower()
 
     user_is_asking_for_application = (
@@ -122,6 +126,9 @@ Behavior:
 
 
 def build_coachbot_system_prompt(chatbot_system_prompt, user_message):
+    """
+    Combine platform-wide CoachBot rules with the selected bot's prompt.
+    """
     return f"""
 {COACHBOT_INTERACTION_RULES}
 
@@ -134,10 +141,10 @@ BOT-SPECIFIC INSTRUCTIONS:
 
 def get_active_model_or_default(model_id=None):
     """
-    Return the requested active model if available.
-    Otherwise, fall back to the first active model.
+    Return the requested active model when available.
 
-    This prevents old conversations from breaking after old models are deactivated.
+    If the requested model does not exist or is inactive, return the first
+    available active model.
     """
     model = None
 
@@ -148,16 +155,23 @@ def get_active_model_or_default(model_id=None):
         ).first()
 
     if model is None:
-        model = OllamaModel.objects.filter(
-            is_active=True,
-        ).order_by("id").first()
+        model = (
+            OllamaModel.objects
+            .filter(is_active=True)
+            .order_by("id")
+            .first()
+        )
 
     return model
 
 
 def get_conversation_for_request(request, conversation_id):
     """
-    Fetch the correct conversation for either authenticated users or guests.
+    Retrieve a conversation belonging to the authenticated user or guest.
+
+    Authenticated users can access only their own conversations.
+    Guests can access only guest conversations associated with the guest
+    name stored in their current session.
     """
     if request.user.is_authenticated:
         return get_object_or_404(
@@ -166,7 +180,7 @@ def get_conversation_for_request(request, conversation_id):
             user=request.user,
         )
 
-    guest_name_value = request.session.get("guest_name", "")
+    guest_name_value = request.session.get("guest_name", "").strip()
 
     if not guest_name_value:
         return None
@@ -181,10 +195,15 @@ def get_conversation_for_request(request, conversation_id):
 
 def safe_next_url(request, default="/bots/"):
     """
-    Safely read the next URL from GET or POST.
-    Prevents broken redirects and avoids unsafe external redirects.
+    Safely retrieve the next URL from either GET or POST.
+
+    External redirects are rejected.
     """
-    next_url = request.POST.get("next") or request.GET.get("next") or default
+    next_url = (
+        request.POST.get("next")
+        or request.GET.get("next")
+        or default
+    )
 
     if url_has_allowed_host_and_scheme(
         url=next_url,
@@ -198,39 +217,61 @@ def safe_next_url(request, default="/bots/"):
 
 def redirect_to_guest_name(request):
     """
-    Redirect unauthenticated users to guest-name page while preserving
-    the full original URL, including query params like model_id.
+    Redirect unauthenticated visitors to the guest-name page while
+    preserving the original requested URL and query parameters.
     """
     next_url = request.get_full_path()
     query_string = urlencode({"next": next_url})
+
     return redirect(f"/guest-name/?{query_string}")
 
 
 def guest_name(request):
-    next_url = safe_next_url(request, default="/bots/")
+    """
+    Collect and store a guest user's display name in the session.
+    """
+    next_url = safe_next_url(
+        request,
+        default="/bots/",
+    )
 
     if request.method == "POST":
-        guest_name_value = request.POST.get("guest_name", "").strip()
+        guest_name_value = request.POST.get(
+            "guest_name",
+            "",
+        ).strip()
 
         if guest_name_value:
             request.session["guest_name"] = guest_name_value
             request.session["is_guest"] = True
             request.session.modified = True
+
             return redirect(next_url)
 
-    return render(request, "guest_name.html", {
-        "next": next_url,
-    })
+    return render(
+        request,
+        "guest_name.html",
+        {
+            "next": next_url,
+        },
+    )
 
 
 def guest_logout(request):
+    """
+    Remove guest session information.
+    """
     request.session.pop("guest_name", None)
     request.session.pop("is_guest", None)
     request.session.modified = True
+
     return redirect("/")
 
 
 def register(request):
+    """
+    Register a standard Django user and sign the new user in.
+    """
     if request.method == "POST":
         form = UserCreationForm(request.POST)
 
@@ -246,74 +287,135 @@ def register(request):
     else:
         form = UserCreationForm()
 
-    return render(request, "register.html", {"form": form})
+    return render(
+        request,
+        "register.html",
+        {
+            "form": form,
+        },
+    )
 
 
 def start_chat(request):
+    """
+    Create a new conversation for either an authenticated user or guest.
+    """
     chatbot_id = request.GET.get("chatbot_id")
     model_id = request.GET.get("model_id")
 
-    if not request.user.is_authenticated and not request.session.get("guest_name"):
+    if (
+        not request.user.is_authenticated
+        and not request.session.get("guest_name")
+    ):
         return redirect_to_guest_name(request)
 
     if not chatbot_id:
-        return JsonResponse({"error": "chatbot_id is required."}, status=400)
+        return JsonResponse(
+            {
+                "error": "chatbot_id is required.",
+            },
+            status=400,
+        )
 
-    chatbot = get_object_or_404(Chatbot, id=chatbot_id, is_active=True)
+    chatbot = get_object_or_404(
+        Chatbot,
+        id=chatbot_id,
+        is_active=True,
+    )
 
     model = get_active_model_or_default(model_id)
 
     if model is None:
-        return JsonResponse({"error": "No active Ollama model found."}, status=400)
+        return JsonResponse(
+            {
+                "error": "No active Ollama model found.",
+            },
+            status=400,
+        )
 
     conversation = Conversation.objects.create(
-        user=request.user if request.user.is_authenticated else None,
+        user=(
+            request.user
+            if request.user.is_authenticated
+            else None
+        ),
         guest_name=request.session.get("guest_name", ""),
         chatbot=chatbot,
         model=model,
         title=f"{chatbot.name} session",
     )
 
-    return redirect("chat_detail", conversation_id=conversation.id)
+    return redirect(
+        "chat_detail",
+        conversation_id=conversation.id,
+    )
 
 
 def chat_detail(request, conversation_id):
-    conversation = get_conversation_for_request(request, conversation_id)
+    """
+    Display a conversation and all active Ollama models.
+    """
+    conversation = get_conversation_for_request(
+        request,
+        conversation_id,
+    )
 
     if conversation is None:
         return redirect_to_guest_name(request)
 
-    models = OllamaModel.objects.filter(is_active=True).order_by("id")
+    models = (
+        OllamaModel.objects
+        .filter(is_active=True)
+        .order_by("id")
+    )
 
-    return render(request, "conversations/chat.html", {
-        "conversation": conversation,
-        "models": models,
-        "messages": conversation.messages.order_by("created_at"),
-    })
+    messages = conversation.messages.order_by("created_at")
+
+    return render(
+        request,
+        "conversations/chat.html",
+        {
+            "conversation": conversation,
+            "models": models,
+            "messages": messages,
+        },
+    )
 
 
 def build_recent_history(conversation):
     """
-    Build a short recent history for Ollama.
-    The latest user message is included in the DB already,
-    so callers use history[:-1] when sending the separate user_message.
+    Build a short recent conversation history for Ollama.
+
+    The newest user message has already been written to the database.
+    Callers therefore pass history[:-1] to Ollama when the newest user
+    message is supplied separately.
     """
     recent_messages = list(
         conversation.messages
         .exclude(role="system")
         .order_by("-created_at")[:4]
     )
+
     recent_messages.reverse()
 
     return [
-        {"role": m.role, "content": m.content}
-        for m in recent_messages
+        {
+            "role": message.role,
+            "content": message.content,
+        }
+        for message in recent_messages
     ]
 
 
-def save_assistant_result(request, conversation, model, user_message, reply):
+def save_assistant_result(
+    request,
+    conversation,
+    model,
+    user_message,
+    reply,
+):
     """
-    Save assistant message, update conversation metadata, and log usage.
+    Save the assistant response, update the conversation, and log usage.
     """
     Message.objects.create(
         conversation=conversation,
@@ -327,10 +429,19 @@ def save_assistant_result(request, conversation, model, user_message, reply):
     if conversation.messages.count() <= 2:
         conversation.title = user_message[:80]
 
-    conversation.save()
+    conversation.save(
+        update_fields=[
+            "model",
+            "title",
+        ]
+    )
 
     UsageLog.objects.create(
-        user=request.user if request.user.is_authenticated else None,
+        user=(
+            request.user
+            if request.user.is_authenticated
+            else None
+        ),
         guest_name=conversation.guest_name,
         chatbot=conversation.chatbot,
         model=model,
@@ -343,24 +454,52 @@ def save_assistant_result(request, conversation, model, user_message, reply):
 @require_POST
 def send_message(request, conversation_id):
     """
-    Standard non-streaming endpoint.
-    Keep this as a fallback.
+    Send a message using the standard non-streaming Ollama endpoint.
+
+    This remains available as a fallback when streaming is not used.
     """
-    conversation = get_conversation_for_request(request, conversation_id)
+    conversation = get_conversation_for_request(
+        request,
+        conversation_id,
+    )
 
     if conversation is None:
-        return JsonResponse({"error": "Guest name required."}, status=403)
+        return JsonResponse(
+            {
+                "error": "Guest name required.",
+            },
+            status=403,
+        )
 
-    user_message = request.POST.get("message", "").strip()
+    user_message = request.POST.get(
+        "message",
+        "",
+    ).strip()
 
     if not user_message:
-        return JsonResponse({"error": "Message cannot be empty."}, status=400)
+        return JsonResponse(
+            {
+                "error": "Message cannot be empty.",
+            },
+            status=400,
+        )
 
-    requested_model_id = request.POST.get("model_id") or conversation.model_id
-    model = get_active_model_or_default(requested_model_id)
+    requested_model_id = (
+        request.POST.get("model_id")
+        or conversation.model_id
+    )
+
+    model = get_active_model_or_default(
+        requested_model_id
+    )
 
     if model is None:
-        return JsonResponse({"error": "No active Ollama model found."}, status=400)
+        return JsonResponse(
+            {
+                "error": "No active Ollama model found.",
+            },
+            status=400,
+        )
 
     Message.objects.create(
         conversation=conversation,
@@ -394,22 +533,26 @@ def send_message(request, conversation_id):
         reply=reply,
     )
 
-    return JsonResponse({
-        "reply": reply,
-        "model": model.display_name,
-    })
+    return JsonResponse(
+        {
+            "reply": reply,
+            "model": model.display_name,
+        }
+    )
 
 
 def sse_message(data, event=None):
     """
-    Format data as a Server-Sent Event message.
+    Format a dictionary as a Server-Sent Event message.
     """
     lines = []
 
     if event:
         lines.append(f"event: {event}")
 
-    lines.append(f"data: {json.dumps(data)}")
+    lines.append(
+        f"data: {json.dumps(data)}"
+    )
 
     return "\n".join(lines) + "\n\n"
 
@@ -417,24 +560,50 @@ def sse_message(data, event=None):
 @require_POST
 def send_message_stream(request, conversation_id):
     """
-    Streaming endpoint.
-    Sends tokens to the browser as Ollama generates them.
+    Stream an Ollama response to the browser using Server-Sent Events.
     """
-    conversation = get_conversation_for_request(request, conversation_id)
+    conversation = get_conversation_for_request(
+        request,
+        conversation_id,
+    )
 
     if conversation is None:
-        return JsonResponse({"error": "Guest name required."}, status=403)
+        return JsonResponse(
+            {
+                "error": "Guest name required.",
+            },
+            status=403,
+        )
 
-    user_message = request.POST.get("message", "").strip()
+    user_message = request.POST.get(
+        "message",
+        "",
+    ).strip()
 
     if not user_message:
-        return JsonResponse({"error": "Message cannot be empty."}, status=400)
+        return JsonResponse(
+            {
+                "error": "Message cannot be empty.",
+            },
+            status=400,
+        )
 
-    requested_model_id = request.POST.get("model_id") or conversation.model_id
-    model = get_active_model_or_default(requested_model_id)
+    requested_model_id = (
+        request.POST.get("model_id")
+        or conversation.model_id
+    )
+
+    model = get_active_model_or_default(
+        requested_model_id
+    )
 
     if model is None:
-        return JsonResponse({"error": "No active Ollama model found."}, status=400)
+        return JsonResponse(
+            {
+                "error": "No active Ollama model found.",
+            },
+            status=400,
+        )
 
     Message.objects.create(
         conversation=conversation,
@@ -454,7 +623,12 @@ def send_message_stream(request, conversation_id):
         chunks = []
 
         try:
-            yield sse_message({"status": "started"}, event="start")
+            yield sse_message(
+                {
+                    "status": "started",
+                },
+                event="start",
+            )
 
             for token in stream_ollama(
                 model.name,
@@ -463,12 +637,20 @@ def send_message_stream(request, conversation_id):
                 user_message,
             ):
                 chunks.append(token)
-                yield sse_message({"token": token}, event="token")
+
+                yield sse_message(
+                    {
+                        "token": token,
+                    },
+                    event="token",
+                )
 
             reply = "".join(chunks).strip()
 
             if not reply:
-                reply = "I’m sorry, I could not generate a response."
+                reply = (
+                    "I’m sorry, I could not generate a response."
+                )
 
             save_assistant_result(
                 request=request,
@@ -488,7 +670,31 @@ def send_message_stream(request, conversation_id):
             )
 
         except OllamaError as exc:
-            error_reply = f"Error connecting to Ollama: {exc}"
+            error_reply = (
+                f"Error connecting to Ollama: {exc}"
+            )
+
+            save_assistant_result(
+                request=request,
+                conversation=conversation,
+                model=model,
+                user_message=user_message,
+                reply=error_reply,
+            )
+
+            yield sse_message(
+                {
+                    "status": "error",
+                    "error": error_reply,
+                },
+                event="error",
+            )
+
+        except Exception as exc:
+            error_reply = (
+                "An unexpected error occurred while generating "
+                f"the response: {exc}"
+            )
 
             save_assistant_result(
                 request=request,
@@ -517,17 +723,172 @@ def send_message_stream(request, conversation_id):
     return response
 
 
+@require_POST
+def submit_feedback(request, conversation_id):
+    """
+    Save or update end-of-conversation CoachBot feedback.
+
+    Each conversation has one feedback record because CoachbotFeedback
+    uses a OneToOneField. Submitting again updates the existing record.
+    """
+    conversation = get_conversation_for_request(
+        request,
+        conversation_id,
+    )
+
+    if conversation is None:
+        return JsonResponse(
+            {
+                "error": (
+                    "A guest name is required to submit feedback."
+                ),
+            },
+            status=403,
+        )
+
+    try:
+        request_body = request.body.decode("utf-8")
+        payload = json.loads(request_body)
+
+    except (
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+    ):
+        return JsonResponse(
+            {
+                "error": "Invalid feedback request.",
+            },
+            status=400,
+        )
+
+    if not isinstance(payload, dict):
+        return JsonResponse(
+            {
+                "error": "Invalid feedback request.",
+            },
+            status=400,
+        )
+
+    try:
+        usefulness = int(
+            payload.get("usefulness")
+        )
+
+        confidence = int(
+            payload.get("confidence")
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return JsonResponse(
+            {
+                "error": (
+                    "Please answer both rating questions."
+                ),
+            },
+            status=400,
+        )
+
+    improvement_feedback = payload.get(
+        "improvement_feedback",
+        "",
+    )
+
+    if improvement_feedback is None:
+        improvement_feedback = ""
+
+    if not isinstance(
+        improvement_feedback,
+        str,
+    ):
+        improvement_feedback = str(
+            improvement_feedback
+        )
+
+    improvement_feedback = (
+        improvement_feedback.strip()
+    )
+
+    if usefulness not in range(1, 6):
+        return JsonResponse(
+            {
+                "error": (
+                    "Usefulness must be between 1 and 5."
+                ),
+            },
+            status=400,
+        )
+
+    if confidence not in range(1, 6):
+        return JsonResponse(
+            {
+                "error": (
+                    "Confidence must be between 1 and 5."
+                ),
+            },
+            status=400,
+        )
+
+    if len(improvement_feedback) > 5000:
+        return JsonResponse(
+            {
+                "error": (
+                    "Open-ended feedback must be "
+                    "5,000 characters or fewer."
+                ),
+            },
+            status=400,
+        )
+
+    feedback, created = (
+        CoachbotFeedback.objects.update_or_create(
+            conversation=conversation,
+            defaults={
+                "usefulness": usefulness,
+                "confidence": confidence,
+                "improvement_feedback": (
+                    improvement_feedback
+                ),
+            },
+        )
+    )
+
+    return JsonResponse(
+        {
+            "success": True,
+            "created": created,
+            "feedback_id": feedback.id,
+            "message": "Feedback saved successfully.",
+        }
+    )
+
+
 @login_required
 def my_dashboard(request):
-    conversations = Conversation.objects.filter(
-        user=request.user
-    ).select_related("chatbot", "model")
+    """
+    Display the authenticated user's conversations and message total.
+    """
+    conversations = (
+        Conversation.objects
+        .filter(user=request.user)
+        .select_related(
+            "chatbot",
+            "model",
+        )
+        .order_by("-created_at")
+    )
 
     total_messages = Message.objects.filter(
         conversation__user=request.user
     ).count()
 
-    return render(request, "conversations/dashboard.html", {
-        "conversations": conversations,
-        "total_messages": total_messages,
-    })
+    return render(
+        request,
+        "conversations/dashboard.html",
+        {
+            "conversations": conversations,
+            "total_messages": total_messages,
+        },
+    )
