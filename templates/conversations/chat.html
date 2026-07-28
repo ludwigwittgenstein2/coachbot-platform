@@ -29,14 +29,14 @@
   }
 
   .bot-hero h1 {
-    font-size: 42px;
     margin: 0;
+    font-size: 42px;
   }
 
   .byline {
+    margin: 18px 0;
     color: #8a8a8a;
     font-size: 22px;
-    margin: 18px 0;
   }
 
   .bot-description {
@@ -55,21 +55,21 @@
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 28px;
-    margin: -25px auto 35px;
     max-width: 1050px;
+    margin: -25px auto 35px;
   }
 
   .starter-card {
-    background: white;
-    color: #666;
+    min-height: 150px;
+    padding: 28px 24px;
     border: 1px solid #e2e2e2;
     border-radius: 24px;
-    padding: 28px 24px;
+    background: white;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    color: #666;
     font-size: 23px;
     line-height: 1.5;
     text-align: left;
-    min-height: 150px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
     cursor: pointer;
     transition:
       transform 0.15s ease,
@@ -137,6 +137,21 @@
     background: #334155;
   }
 
+  .conversation-ended-message {
+    display: none;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    background: #f0fdf4;
+    color: #166534;
+    font-weight: 600;
+  }
+
+  .conversation-ended-message.visible {
+    display: block;
+  }
+
 
   /* =========================================================
      FEEDBACK MODAL
@@ -168,9 +183,9 @@
     width: min(820px, 100%);
     max-height: 92vh;
     overflow-y: auto;
-    background: white;
-    border-radius: 18px;
     padding: 32px;
+    border-radius: 18px;
+    background: white;
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
   }
 
@@ -181,33 +196,33 @@
   }
 
   .feedback-modal-introduction {
+    margin: 10px 0 0;
     color: #64748b;
     line-height: 1.5;
-    margin: 10px 0 0;
   }
 
   .feedback-modal-close {
     position: absolute;
     top: 12px;
     right: 16px;
+    padding: 4px;
+    border: 0;
     background: transparent;
     color: #475569;
-    border: 0;
-    padding: 4px;
     font-size: 34px;
     line-height: 1;
     cursor: pointer;
   }
 
   .feedback-modal-close:hover {
-    color: #0f172a;
     background: transparent;
+    color: #0f172a;
   }
 
   .feedback-question {
-    border: 0;
-    padding: 0;
     margin: 28px 0;
+    padding: 0;
+    border: 0;
   }
 
   .feedback-question legend,
@@ -232,18 +247,18 @@
 
   .likert-option {
     position: relative;
-    min-height: 125px;
-    border: 2px solid #dbe3ea;
-    border-radius: 12px;
-    padding: 14px 8px;
     display: flex;
+    min-height: 125px;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 9px;
+    padding: 14px 8px;
+    border: 2px solid #dbe3ea;
+    border-radius: 12px;
+    background: white;
     text-align: center;
     cursor: pointer;
-    background: white;
     transition:
       border-color 0.15s ease,
       background-color 0.15s ease,
@@ -252,8 +267,8 @@
   }
 
   .likert-option:hover {
-    border-color: #2563eb;
     transform: translateY(-2px);
+    border-color: #2563eb;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
   }
 
@@ -275,23 +290,23 @@
   }
 
   .likert-number {
+    display: flex;
     width: 42px;
     height: 42px;
-    border: 2px solid #2563eb;
-    border-radius: 50%;
-    color: #2563eb;
-    background: white;
-    display: flex;
     align-items: center;
     justify-content: center;
+    border: 2px solid #2563eb;
+    border-radius: 50%;
+    background: white;
+    color: #2563eb;
     font-size: 20px;
     font-weight: 700;
   }
 
   .likert-label {
+    color: #334155;
     font-size: 14px;
     line-height: 1.3;
-    color: #334155;
   }
 
 
@@ -334,9 +349,9 @@
   }
 
   .feedback-secondary-button {
+    border: 1px solid #cbd5e1;
     background: white;
     color: #334155;
-    border: 1px solid #cbd5e1;
   }
 
   .feedback-secondary-button:hover {
@@ -375,8 +390,8 @@
       min-height: auto;
       flex-direction: row;
       justify-content: flex-start;
-      text-align: left;
       padding: 12px;
+      text-align: left;
     }
 
     .feedback-modal-actions {
@@ -743,7 +758,7 @@
       {% if model.is_active %}
         <option
           value="{{ model.id }}"
-          {% if conversation.model.id == model.id %}selected{% endif %}
+          {% if conversation.model_id == model.id %}selected{% endif %}
         >
           {{ model.display_name }}
         </option>
@@ -800,9 +815,22 @@
         type="button"
         id="endConversationButton"
         class="end-conversation-button"
+        {% if feedback_submitted %}disabled{% endif %}
       >
-        End Conversation
+        {% if feedback_submitted %}
+          Feedback Submitted
+        {% else %}
+          End Conversation
+        {% endif %}
       </button>
+    </div>
+
+    <div
+      id="conversationEndedMessage"
+      class="conversation-ended-message {% if feedback_submitted %}visible{% endif %}"
+      aria-live="polite"
+    >
+      This conversation has ended and its feedback has been submitted.
     </div>
   </form>
 </div>
@@ -864,7 +892,6 @@
               value="1"
               required
             >
-
             <span class="likert-number">1</span>
             <span class="likert-label">Not useful</span>
           </label>
@@ -875,7 +902,6 @@
               name="usefulness"
               value="2"
             >
-
             <span class="likert-number">2</span>
             <span class="likert-label">Slightly useful</span>
           </label>
@@ -886,7 +912,6 @@
               name="usefulness"
               value="3"
             >
-
             <span class="likert-number">3</span>
             <span class="likert-label">Moderately useful</span>
           </label>
@@ -897,7 +922,6 @@
               name="usefulness"
               value="4"
             >
-
             <span class="likert-number">4</span>
             <span class="likert-label">Very useful</span>
           </label>
@@ -908,7 +932,6 @@
               name="usefulness"
               value="5"
             >
-
             <span class="likert-number">5</span>
             <span class="likert-label">Extremely useful</span>
           </label>
@@ -932,7 +955,6 @@
               value="1"
               required
             >
-
             <span class="likert-number">1</span>
             <span class="likert-label">Not confident</span>
           </label>
@@ -943,7 +965,6 @@
               name="confidence"
               value="2"
             >
-
             <span class="likert-number">2</span>
             <span class="likert-label">Slightly confident</span>
           </label>
@@ -954,7 +975,6 @@
               name="confidence"
               value="3"
             >
-
             <span class="likert-number">3</span>
             <span class="likert-label">Moderately confident</span>
           </label>
@@ -965,7 +985,6 @@
               name="confidence"
               value="4"
             >
-
             <span class="likert-number">4</span>
             <span class="likert-label">Very confident</span>
           </label>
@@ -976,7 +995,6 @@
               name="confidence"
               value="5"
             >
-
             <span class="likert-number">5</span>
             <span class="likert-label">Extremely confident</span>
           </label>
@@ -1008,7 +1026,6 @@
 
 
       <div class="feedback-modal-actions">
-
         <button
           type="button"
           id="continueConversationButton"
@@ -1023,7 +1040,6 @@
         >
           Submit Feedback
         </button>
-
       </div>
     </form>
   </div>
@@ -1059,6 +1075,9 @@
   const endConversationButton =
     document.getElementById("endConversationButton");
 
+  const conversationEndedMessage =
+    document.getElementById("conversationEndedMessage");
+
   const feedbackModal =
     document.getElementById("feedbackModal");
 
@@ -1091,8 +1110,13 @@
   const sendStreamUrl =
     "{% url 'send_message_stream' conversation.id %}";
 
+  const activityUrl =
+    "{% url 'record_activity' conversation.id %}";
+
   const csrfToken =
-    chatForm.querySelector("[name=csrfmiddlewaretoken]").value;
+    chatForm.querySelector(
+      "[name=csrfmiddlewaretoken]"
+    ).value;
 
 
   /* =========================================================
@@ -1100,29 +1124,75 @@
      ========================================================= */
 
   let isSending = false;
-  let feedbackSubmitted = false;
+
+  let feedbackSubmitted =
+    {{ feedback_submitted|yesno:"true,false" }};
+
+  let pendingActiveSeconds = 0;
+  let lastUserActivityAt = Date.now();
+  let activityRequestInProgress = false;
+
+  const activeWindowMilliseconds = 60000;
 
 
   /* =========================================================
-     CHAT HELPERS
+     GENERAL HELPERS
      ========================================================= */
 
   function setSendingState(value) {
     isSending = value;
 
-    sendButton.disabled = value;
-    modelSelect.disabled = value;
+    sendButton.disabled =
+      value || feedbackSubmitted;
+
+    modelSelect.disabled =
+      value || feedbackSubmitted;
+
+    messageInput.disabled =
+      feedbackSubmitted;
 
     starterButtons.forEach(button => {
-      button.disabled = value;
+      button.disabled =
+        value || feedbackSubmitted;
     });
 
-    if (!feedbackSubmitted) {
-      endConversationButton.disabled = value;
-    }
+    endConversationButton.disabled =
+      value || feedbackSubmitted;
 
-    sendButton.textContent =
-      value ? "Sending..." : "Send";
+    if (feedbackSubmitted) {
+      sendButton.textContent =
+        "Conversation Ended";
+    } else {
+      sendButton.textContent =
+        value ? "Sending..." : "Send";
+    }
+  }
+
+
+  function applyConversationEndedState() {
+    feedbackSubmitted = true;
+
+    sendButton.disabled = true;
+    sendButton.textContent = "Conversation Ended";
+
+    messageInput.disabled = true;
+    modelSelect.disabled = true;
+
+    starterButtons.forEach(button => {
+      button.disabled = true;
+    });
+
+    endConversationButton.disabled = true;
+    endConversationButton.textContent =
+      "Feedback Submitted";
+
+    submitFeedbackButton.disabled = true;
+    submitFeedbackButton.textContent =
+      "Submitted";
+
+    conversationEndedMessage.classList.add(
+      "visible"
+    );
   }
 
 
@@ -1222,6 +1292,112 @@
 
 
   /* =========================================================
+     SESSION ACTIVITY TRACKING
+     ========================================================= */
+
+  function markUserActivity() {
+    lastUserActivityAt = Date.now();
+  }
+
+
+  function participantIsCurrentlyActive() {
+    const timeSinceActivity =
+      Date.now() - lastUserActivityAt;
+
+    return (
+      document.visibilityState === "visible" &&
+      timeSinceActivity <= activeWindowMilliseconds
+    );
+  }
+
+
+  async function flushActivity(force = false) {
+    if (activityRequestInProgress) {
+      return false;
+    }
+
+    if (pendingActiveSeconds < 1) {
+      return true;
+    }
+
+    if (feedbackSubmitted && !force) {
+      return false;
+    }
+
+    const secondsToSubmit = Math.min(
+      pendingActiveSeconds,
+      30
+    );
+
+    pendingActiveSeconds -= secondsToSubmit;
+    activityRequestInProgress = true;
+
+    try {
+      const response = await fetch(
+        activityUrl,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+          },
+
+          body: JSON.stringify({
+            seconds: secondsToSubmit
+          }),
+
+          keepalive: true
+        }
+      );
+
+      if (!response.ok) {
+        pendingActiveSeconds += secondsToSubmit;
+
+        console.warn(
+          "Activity tracking returned status:",
+          response.status
+        );
+
+        return false;
+      }
+
+      return true;
+
+    } catch (error) {
+      pendingActiveSeconds += secondsToSubmit;
+
+      console.debug(
+        "Activity tracking could not be saved:",
+        error
+      );
+
+      return false;
+
+    } finally {
+      activityRequestInProgress = false;
+    }
+  }
+
+
+  async function flushFinalActivity() {
+    if (feedbackSubmitted) {
+      return;
+    }
+
+    if (activityRequestInProgress) {
+      await new Promise(resolve => {
+        window.setTimeout(resolve, 400);
+      });
+    }
+
+    if (pendingActiveSeconds > 0) {
+      await flushActivity(true);
+    }
+  }
+
+
+  /* =========================================================
      SEND CHAT MESSAGE
      ========================================================= */
 
@@ -1229,9 +1405,15 @@
     const cleanedMessage =
       message.trim();
 
-    if (!cleanedMessage || isSending) {
+    if (
+      !cleanedMessage ||
+      isSending ||
+      feedbackSubmitted
+    ) {
       return;
     }
+
+    markUserActivity();
 
     appendMessage(
       "user",
@@ -1391,7 +1573,10 @@
 
     } finally {
       setSendingState(false);
-      messageInput.focus();
+
+      if (!feedbackSubmitted) {
+        messageInput.focus();
+      }
     }
   }
 
@@ -1496,8 +1681,14 @@
       "Submitting...";
 
     showFeedbackMessage(
-      "Saving your feedback..."
+      "Saving your session time and feedback..."
     );
+
+    /*
+      Save the final unsent active seconds before Django copies
+      Conversation.active_seconds into CoachbotFeedback.
+    */
+    await flushFinalActivity();
 
     try {
       const response = await fetch(
@@ -1542,22 +1733,22 @@
         );
       }
 
-      feedbackSubmitted = true;
-
       showFeedbackMessage(
         "Thank you. Your feedback has been saved.",
         "success"
       );
 
-      endConversationButton.disabled = true;
+      window.clearInterval(
+        activityCounter
+      );
 
-      endConversationButton.textContent =
-        "Feedback Submitted";
+      window.clearInterval(
+        activityHeartbeat
+      );
 
-      submitFeedbackButton.textContent =
-        "Submitted";
+      applyConversationEndedState();
 
-      setTimeout(() => {
+      window.setTimeout(() => {
         closeFeedbackModal();
       }, 1400);
 
@@ -1579,7 +1770,7 @@
 
 
   /* =========================================================
-     EVENT LISTENERS
+     CHAT EVENT LISTENERS
      ========================================================= */
 
   chatForm.addEventListener(
@@ -1655,9 +1846,101 @@
 
 
   /* =========================================================
+     ACTIVITY EVENT LISTENERS
+     ========================================================= */
+
+  [
+    "pointerdown",
+    "keydown",
+    "scroll",
+    "touchstart",
+    "input"
+  ].forEach(eventName => {
+    document.addEventListener(
+      eventName,
+      markUserActivity
+    );
+  });
+
+
+  document.addEventListener(
+    "visibilitychange",
+    function() {
+      if (
+        document.visibilityState === "visible"
+      ) {
+        markUserActivity();
+      }
+    }
+  );
+
+
+  /*
+    Add one second only while the page is visible and the person
+    has shown activity during the previous 60 seconds.
+  */
+  const activityCounter =
+    window.setInterval(
+      function() {
+        if (
+          !feedbackSubmitted &&
+          participantIsCurrentlyActive()
+        ) {
+          pendingActiveSeconds += 1;
+        }
+      },
+      1000
+    );
+
+
+  /*
+    Submit accumulated active seconds approximately every
+    15 seconds.
+  */
+  const activityHeartbeat =
+    window.setInterval(
+      function() {
+        flushActivity();
+      },
+      15000
+    );
+
+
+  window.addEventListener(
+    "pagehide",
+    function() {
+      window.clearInterval(
+        activityCounter
+      );
+
+      window.clearInterval(
+        activityHeartbeat
+      );
+
+      if (!feedbackSubmitted) {
+        flushFinalActivity();
+      }
+    }
+  );
+
+
+  /* =========================================================
      PAGE INITIALIZATION
      ========================================================= */
 
+  if (feedbackSubmitted) {
+    applyConversationEndedState();
+
+    window.clearInterval(
+      activityCounter
+    );
+
+    window.clearInterval(
+      activityHeartbeat
+    );
+  }
+
+  markUserActivity();
   scrollToBottom();
 </script>
 {% endblock %}

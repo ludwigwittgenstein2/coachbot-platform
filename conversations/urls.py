@@ -30,6 +30,11 @@ urlpatterns = [
         name="send_message_stream",
     ),
     path(
+    "<int:conversation_id>/activity/",
+    views.record_activity,
+    name="record_activity",
+    ),
+    path(
         "<int:conversation_id>/feedback/",
         views.submit_feedback,
         name="submit_feedback",

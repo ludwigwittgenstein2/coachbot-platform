@@ -40,6 +40,9 @@ class UsageLog(models.Model):
     output_chars = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ["-created_at"]
+
     def __str__(self):
         if self.user:
             return f"{self.user} - {self.chatbot.name}"
@@ -73,7 +76,34 @@ class CoachbotFeedback(models.Model):
     improvement_feedback = models.TextField(
         blank=True,
         max_length=5000,
-        help_text="Open-ended feedback about how the CoachBot can improve.",
+        help_text=(
+            "Open-ended feedback about how the CoachBot can improve."
+        ),
+    )
+
+    session_duration_seconds = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Approximate active time spent using the CoachBot, "
+            "measured in seconds."
+        ),
+    )
+
+    is_repeat_user = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Whether the participant had a prior CoachBot conversation."
+        ),
+    )
+
+    visit_number = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The participant's conversation number across the application."
+        ),
     )
 
     created_at = models.DateTimeField(
@@ -102,3 +132,31 @@ class CoachbotFeedback(models.Model):
             return self.conversation.user.username
 
         return self.conversation.guest_name or "Guest"
+
+    @property
+    def session_duration_display(self):
+        """
+        Convert the recorded session duration into readable text.
+        """
+        total_seconds = self.session_duration_seconds
+
+        if total_seconds is None:
+            return "Unknown"
+
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        if hours:
+            return f"{hours} hr {minutes} min {seconds} sec"
+
+        if minutes:
+            return f"{minutes} min {seconds} sec"
+
+        return f"{seconds} sec"
+
+    @property
+    def repeat_user_display(self):
+        if self.is_repeat_user is None:
+            return "Unknown"
+
+        return "Yes" if self.is_repeat_user else "No"
