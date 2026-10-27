@@ -229,3 +229,20 @@ LOGGING = {
         },
     },
 }
+
+AZURE_OPENAI_ENDPOINT = os.getenv(
+    "AZURE_OPENAI_ENDPOINT",
+    "https://fndry-cbot-nonprod-001.openai.azure.com/",
+)
+
+AZURE_CLIENT_ID = os.getenv(
+    "AZURE_CLIENT_ID",
+    "44870a1d-acbb-4235-b908-a3d036798573",
+)
+
+AZURE_OPENAI_DEPLOYMENT = os.getenv(
+    "AZURE_OPENAI_DEPLOYMENT",
+    "gpt-5.5",
+)
+
+LLM_BACKEND = os.getenv("LLM_BACKEND", "ollama").lower()

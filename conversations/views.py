@@ -3,6 +3,7 @@ import logging
 import uuid
 from urllib.parse import urlencode
 
+from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
@@ -19,8 +20,40 @@ from bots.models import Chatbot, OllamaModel
 from .models import Conversation, Message
 from .ollama_client import OllamaError, ask_ollama, stream_ollama
 
+from .azure_openai_client import AzureOpenAIError, ask_azure, stream_azure
+
 
 logger = logging.getLogger(__name__)
+
+
+def use_azure_openai():
+    """Select Azure in deployment, keep Ollama as the local default."""
+    return getattr(settings, "LLM_BACKEND", "ollama").lower() == "azure"
+
+
+def ask_selected_model(model_name, system_prompt, history, user_message):
+    """Keep the existing arguments and return type for either provider."""
+    if use_azure_openai():
+        return ask_azure(
+            settings.AZURE_OPENAI_DEPLOYMENT,
+            system_prompt,
+            history,
+            user_message,
+        )
+    return ask_ollama(model_name, system_prompt, history, user_message)
+
+
+def stream_selected_model(model_name, system_prompt, history, user_message):
+    """Yield the same text chunks expected by CoachBot's SSE endpoint."""
+    if use_azure_openai():
+        yield from stream_azure(
+            settings.AZURE_OPENAI_DEPLOYMENT,
+            system_prompt,
+            history,
+            user_message,
+        )
+    else:
+        yield from stream_ollama(model_name, system_prompt, history, user_message)
 
 
 COACHBOT_INTERACTION_RULES = """
@@ -148,30 +181,30 @@ BOT-SPECIFIC INSTRUCTIONS:
 
 def get_active_model_or_default(model_id=None):
     """
-    Return the requested active model when available.
-
-    Otherwise, return the first active model.
+    Select the active model for the configured backend.
     """
-    model = None
+
+    if use_azure_openai():
+        return OllamaModel.objects.filter(
+            name=settings.AZURE_OPENAI_DEPLOYMENT,
+            is_active=True,
+        ).first()
+
+    models = OllamaModel.objects.filter(
+        is_active=True,
+    ).exclude(
+        name=settings.AZURE_OPENAI_DEPLOYMENT,
+    )
 
     if model_id:
         try:
-            model = OllamaModel.objects.filter(
-                id=model_id,
-                is_active=True,
-            ).first()
+            model = models.filter(id=model_id).first()
+            if model is not None:
+                return model
         except (TypeError, ValueError):
-            model = None
+            pass
 
-    if model is None:
-        model = (
-            OllamaModel.objects
-            .filter(is_active=True)
-            .order_by("id")
-            .first()
-        )
-
-    return model
+    return models.order_by("id").first()
 
 
 def get_or_create_visitor_id(request):
@@ -408,11 +441,18 @@ def chat_detail(request, conversation_id):
     if conversation is None:
         return redirect_to_guest_name(request)
 
-    models = (
-        OllamaModel.objects
-        .filter(is_active=True)
-        .order_by("id")
-    )
+    models = OllamaModel.objects.filter(is_active=True)
+
+    if use_azure_openai():
+        models = models.filter(
+            name=settings.AZURE_OPENAI_DEPLOYMENT
+        )
+    else:
+        models = models.exclude(
+            name=settings.AZURE_OPENAI_DEPLOYMENT
+        )
+
+    models = models.order_by("id")
 
     messages = conversation.messages.order_by(
         "created_at"
@@ -560,14 +600,14 @@ def send_message(request, conversation_id):
     )
 
     try:
-        reply = ask_ollama(
+        reply = ask_selected_model(
             model.name,
             system_prompt,
             history[:-1],
             user_message,
         )
-    except OllamaError as exc:
-        reply = f"Error connecting to Ollama: {exc}"
+    except (OllamaError, AzureOpenAIError) as exc:
+        reply = f"Error contacting the language model: {exc}"
 
     save_assistant_result(
         request=request,
@@ -666,7 +706,7 @@ def send_message_stream(request, conversation_id):
                 event="start",
             )
 
-            for token in stream_ollama(
+            for token in stream_selected_model(
                 model.name,
                 system_prompt,
                 history[:-1],
@@ -703,9 +743,9 @@ def send_message_stream(request, conversation_id):
                 event="done",
             )
 
-        except OllamaError as exc:
+        except (OllamaError, AzureOpenAIError) as exc:
             error_reply = (
-                f"Error connecting to Ollama: {exc}"
+                f"Error contacting the language model: {exc}"
             )
 
             save_assistant_result(

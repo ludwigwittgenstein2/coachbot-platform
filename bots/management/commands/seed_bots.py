@@ -1038,7 +1038,20 @@ class Command(BaseCommand):
         valid_model_names = [name for name, display_name in MODEL_DATA]
 
         # Deactivate old model names, including DeepSeek.
-        OllamaModel.objects.exclude(name__in=valid_model_names).update(is_active=False)
+        # Preserve the Azure OpenAI deployment when seeding Ollama models.
+        from django.conf import settings
+
+        azure_model_name = getattr(
+            settings,
+            "AZURE_OPENAI_DEPLOYMENT",
+            "gpt-5.5",
+        )
+
+        protected_model_names = valid_model_names + [azure_model_name]
+
+        OllamaModel.objects.exclude(
+            name__in=protected_model_names
+        ).update(is_active=False)
 
         # Create or update the one active Railway Ollama model.
         for name, display_name in MODEL_DATA:

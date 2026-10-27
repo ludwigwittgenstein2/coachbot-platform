@@ -6,3 +6,11 @@ __pycache__/
 # Python cache files
 __pycache__/
 *.py[cod]
+
+# Local and sensitive files
+db.sqlite3
+.env
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
